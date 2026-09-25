@@ -64,7 +64,7 @@ git push origin v1.0.0
 ```
 
 Workflow автоматически:
-- соберёт `FaradayEarsMod-1.19.2-1.0.0.jar`
+- соберёт `FaradayEarsMod-1.21.1-1.0.0.jar`
 - создаст **GitHub Release** с прикреплённым jar-файлом → вкладка **Releases** на странице репозитория
 - этот релиз и есть «страница загрузки» мода — ссылку можно давать друзьям
 
@@ -76,8 +76,8 @@ Workflow автоматически:
 2. Войти → **My Projects** → **Create Project**
 3. **Project Name:** `Faraday Ears & Tail`
 4. Вставьте описание из файла **`CURSEFORGE_DESCRIPTION.md`** (английский вариант — основной)
-5. **Game:** Minecraft → **Game version:** 1.19.2 → **Loader:** Forge
-6. Загрузите jar: `build/libs/FaradayEarsMod-1.19.2-1.0.0.jar` (или скачайте из GitHub Release)
+5. **Game:** Minecraft → **Game version:** 1.21.1 → **Loader:** Forge
+6. Загрузите jar: `build/libs/FaradayEarsMod-1.21.1-1.0.0.jar` (или скачайте из GitHub Release)
 7. Загрузите **2–3 скриншота** (обязательно):
    - пресет «Фарадей» крупным планом (ушки + хвост)
    - хвост с хитбоксами (`F3+B`) на фоне

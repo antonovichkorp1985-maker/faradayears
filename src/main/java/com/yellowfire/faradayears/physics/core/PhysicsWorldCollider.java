@@ -15,6 +15,8 @@ import java.util.List;
  * Robust sphere collider for tail and cosmetic physics.
  * Ensures the tail softly lays on ground without hovering/levitating and checks
  * surrounding block footprints to prevent falling through slopes or edges.
+ *
+ * NeoForge 1.21.1: Material API удалён — используем форму коллизии блока.
  */
 public class PhysicsWorldCollider {
     public static class CollisionResult {
@@ -27,18 +29,22 @@ public class PhysicsWorldCollider {
         }
     }
 
+    private static boolean isSolid(BlockState state, Level level, BlockPos pos) {
+        return !state.isAir() && !state.getCollisionShape(level, pos).isEmpty();
+    }
+
     public CollisionResult collideSphere(Level level, Entity owner, Vec3 point, double radius) {
         Vec3 result = point;
         boolean ground = false;
 
         if (level == null) return new CollisionResult(result, false);
 
-        BlockPos minPos = new BlockPos(result.x - radius, result.y - radius, result.z - radius);
-        BlockPos maxPos = new BlockPos(result.x + radius, result.y + radius, result.z + radius);
+        BlockPos minPos = BlockPos.containing(result.x - radius, result.y - radius, result.z - radius);
+        BlockPos maxPos = BlockPos.containing(result.x + radius, result.y + radius, result.z + radius);
 
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             BlockState bState = level.getBlockState(pos);
-            if (!bState.isAir() && bState.getMaterial().isSolid()) {
+            if (isSolid(bState, level, pos)) {
                 VoxelShape shape = bState.getCollisionShape(level, pos);
                 if (!shape.isEmpty()) {
                     AABB box = shape.bounds().move(pos).inflate(radius);
@@ -94,7 +100,7 @@ public class PhysicsWorldCollider {
                 for (int y = topY; y >= bottomY; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState bState = level.getBlockState(pos);
-                    if (!bState.isAir() && bState.getMaterial().isSolid()) {
+                    if (isSolid(bState, level, pos)) {
                         VoxelShape shape = bState.getCollisionShape(level, pos);
                         if (!shape.isEmpty()) {
                             AABB box = shape.bounds().move(pos);

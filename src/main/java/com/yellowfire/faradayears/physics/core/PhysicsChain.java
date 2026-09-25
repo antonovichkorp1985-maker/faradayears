@@ -194,7 +194,7 @@ public class PhysicsChain {
     }
 
     private void settleDistalNearGround(Level level, Entity owner) {
-        if (level == null || owner == null || !owner.isOnGround() || particles.size() < 2) return;
+        if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
         for (int i = 1; i < particles.size(); i++) {
             PhysicsParticle p = particles.get(i);
             double groundY = collider.findGroundTopBelow(level, p.position, p.radius, 1.25D);

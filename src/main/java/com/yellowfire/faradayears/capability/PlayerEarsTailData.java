@@ -1,12 +1,26 @@
 package com.yellowfire.faradayears.capability;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 
 /**
  * v51-pouch-and-skin-body: adds `showPouch`, `pouchScaleX/Y/Z`, `pouchOffsetY/Z`,
  * and makes tail/ears/body fully support skin-blended chest, hips, and front belt pouch (`декоративный мешочек`).
+ *
+ * NeoForge 1.21.1: implements INBTSerializable for Data Attachment persistence.
  */
-public class PlayerEarsTailData {
+public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
+
+    @Override
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        return saveNBTData();
+    }
+
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        loadNBTData(nbt);
+    }
     private boolean showTail = true;
     private boolean showEars = true;
     private int earShape = 0;

@@ -78,21 +78,19 @@ public class FaradayBodyModel extends Model {
                                float shouldersSX, float shouldersSY, float shouldersSZ, float shouldersOY,
                                float pouchSX, float pouchSY, float pouchSZ, float pouchOX, float pouchOY, float pouchOZ, float jigglePY, float jigglePZ,
                                int colorRgb) {
-        float r = ((colorRgb >> 16) & 0xFF) / 255.0f;
-        float g = ((colorRgb >> 8) & 0xFF) / 255.0f;
-        float b = (colorRgb & 0xFF) / 255.0f;
+        int color = 0xFF000000 | (colorRgb & 0xFFFFFF);
 
         if ((gender == 1 || gender == 3) && showChest) {
             poseStack.pushPose();
             poseStack.translate(0.0f, (chestOY + jiggleCLY) / 16.0f, (chestOZ + jiggleCLZ) / 16.0f);
             poseStack.scale(chestSX, chestSY, chestSZ);
-            chestLeft.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            chestLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
 
             poseStack.pushPose();
             poseStack.translate(0.0f, (chestOY + jiggleCRY) / 16.0f, (chestOZ + jiggleCRZ) / 16.0f);
             poseStack.scale(chestSX, chestSY, chestSZ);
-            chestRight.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            chestRight.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
         }
 
@@ -100,13 +98,13 @@ public class FaradayBodyModel extends Model {
             poseStack.pushPose();
             poseStack.translate(0.0f, (hipsOY + jiggleHLY) / 16.0f, (hipsOZ + jiggleHLZ) / 16.0f);
             poseStack.scale(hipsSX, hipsSY, hipsSZ);
-            hipsLeft.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            hipsLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
 
             poseStack.pushPose();
             poseStack.translate(0.0f, (hipsOY + jiggleHRY) / 16.0f, (hipsOZ + jiggleHRZ) / 16.0f);
             poseStack.scale(hipsSX, hipsSY, hipsSZ);
-            hipsRight.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            hipsRight.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
         }
 
@@ -114,8 +112,8 @@ public class FaradayBodyModel extends Model {
             poseStack.pushPose();
             poseStack.translate(0.0f, shouldersOY / 16.0f, 0.0f);
             poseStack.scale(shouldersSX, shouldersSY, shouldersSZ);
-            shouldersLeft.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
-            shouldersRight.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            shouldersLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
+            shouldersRight.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
         }
 
@@ -123,19 +121,19 @@ public class FaradayBodyModel extends Model {
             poseStack.pushPose();
             poseStack.translate(pouchOX / 16.0f, (10.5f + pouchOY + jigglePY) / 16.0f, (-2.1f + pouchOZ + jigglePZ) / 16.0f);
             poseStack.scale(pouchSX, pouchSY, pouchSZ);
-            pouchFront.render(poseStack, buffer, packedLight, packedOverlay, r, g, b, 1.0f);
+            pouchFront.render(poseStack, buffer, packedLight, packedOverlay, color);
             poseStack.popPose();
         }
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        chestLeft.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        chestRight.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        hipsLeft.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        hipsRight.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        shouldersLeft.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        shouldersRight.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        pouchFront.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
+        chestLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
+        chestRight.render(poseStack, buffer, packedLight, packedOverlay, color);
+        hipsLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
+        hipsRight.render(poseStack, buffer, packedLight, packedOverlay, color);
+        shouldersLeft.render(poseStack, buffer, packedLight, packedOverlay, color);
+        shouldersRight.render(poseStack, buffer, packedLight, packedOverlay, color);
+        pouchFront.render(poseStack, buffer, packedLight, packedOverlay, color);
     }
 }

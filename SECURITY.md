@@ -3,7 +3,7 @@
 ## Supported versions
 | Version | Supported |
 |---|---|
-| 1.0.x (1.19.2 Forge) | ✅ |
+| 1.0.x (1.21.1 Forge) | ✅ |
 
 ## Reporting a vulnerability
 Это клиентский косметический мод для Minecraft. Несмотря на это, если вы нашли проблему безопасности (например, краш-эксплойт через сетевые пакеты `SyncEarsTailPacket`), сообщите:

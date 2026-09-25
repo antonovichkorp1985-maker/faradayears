@@ -2,6 +2,7 @@ package com.yellowfire.faradayears.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.yellowfire.faradayears.capability.PlayerEarsTailData;
 import com.yellowfire.faradayears.physics.TailPhysicsEngine;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -19,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
  * 2) Centered GUI 3D preview (`IS_IN_GUI_PREVIEW`) and zero hump spline (`p0 colinear`).
  */
 public class ProceduralTailRenderer {
-    private static final ResourceLocation TAIL_TEXTURE = new ResourceLocation("faradayears", "textures/entity/faraday_tail_solid.png");
+    private static final ResourceLocation TAIL_TEXTURE = ResourceLocation.fromNamespaceAndPath("faradayears", "textures/entity/faraday_tail_solid.png");
     private static final int SIDES = 8;
     private static final int SUBDIVISIONS = 4;
 
@@ -43,13 +44,13 @@ public class ProceduralTailRenderer {
         poseStack.translate(0.0D, 1.501D, 0.0D);
         poseStack.scale(-1.0F, -1.0F, 1.0F);
         float bodyRot = Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot);
-        poseStack.mulPose(com.mojang.math.Vector3f.YP.rotationDegrees(-(180.0F - bodyRot)));
+        poseStack.mulPose(Axis.YP.rotationDegrees(-(180.0F - bodyRot)));
 
         poseStack.translate(-px, -py, -pz);
 
         if (IS_IN_GUI_PREVIEW) {
             poseStack.translate(px, py, pz);
-            poseStack.mulPose(com.mojang.math.Vector3f.YP.rotationDegrees(GUI_PREVIEW_REAL_YAW));
+            poseStack.mulPose(Axis.YP.rotationDegrees(GUI_PREVIEW_REAL_YAW));
             poseStack.translate(-px, -py, -pz);
         }
 
@@ -276,12 +277,11 @@ public class ProceduralTailRenderer {
         int r = (rgb >> 16) & 0xFF;
         int g = (rgb >> 8) & 0xFF;
         int b = rgb & 0xFF;
-        c.vertex(poseStack.last().pose(), (float) p.x, (float) p.y, (float) p.z)
-                .color(r, g, b, 255)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(light)
-                .normal((float) n.x, (float) n.y, (float) n.z)
-                .endVertex();
+        c.addVertex(poseStack.last().pose(), (float) p.x, (float) p.y, (float) p.z)
+                .setColor(r, g, b, 255)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal((float) n.x, (float) n.y, (float) n.z);
     }
 }

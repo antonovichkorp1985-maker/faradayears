@@ -1,9 +1,8 @@
 package com.yellowfire.faradayears.client.gui;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -83,8 +82,13 @@ public class TextureCanvasWidget extends AbstractWidget {
     }
 
     @Override
-    public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-        fill(poseStack, x - 1, y - 1, x + width + 1, y + height + 1, 0xFF000000);
+    protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        int x = getX();
+        int y = getY();
+        int width = getWidth();
+        int height = getHeight();
+
+        guiGraphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF000000);
         int cellWidth = width / gridSize;
         int cellHeight = height / gridSize;
 
@@ -92,15 +96,15 @@ public class TextureCanvasWidget extends AbstractWidget {
             for (int j = 0; j < gridSize; j++) {
                 int px = x + i * cellWidth;
                 int py = y + j * cellHeight;
-                fill(poseStack, px, py, px + cellWidth, py + cellHeight, pixelGrid[i][j]);
+                guiGraphics.fill(px, py, px + cellWidth, py + cellHeight, pixelGrid[i][j]);
             }
         }
 
         for (int i = 0; i <= gridSize; i++) {
             int lineX = x + i * cellWidth;
             int lineY = y + i * cellHeight;
-            fill(poseStack, lineX, y, lineX + 1, y + height, 0x33FFFFFF);
-            fill(poseStack, x, lineY, x + width, lineY + 1, 0x33FFFFFF);
+            guiGraphics.fill(lineX, y, lineX + 1, y + height, 0x33FFFFFF);
+            guiGraphics.fill(x, lineY, x + width, lineY + 1, 0x33FFFFFF);
         }
     }
 
@@ -123,10 +127,10 @@ public class TextureCanvasWidget extends AbstractWidget {
     }
 
     private void applyPaint(double mouseX, double mouseY) {
-        int cellWidth = width / gridSize;
-        int cellHeight = height / gridSize;
-        int gx = (int) ((mouseX - x) / cellWidth);
-        int gy = (int) ((mouseY - y) / cellHeight);
+        int cellWidth = getWidth() / gridSize;
+        int cellHeight = getHeight() / gridSize;
+        int gx = (int) ((mouseX - getX()) / cellWidth);
+        int gy = (int) ((mouseY - getY()) / cellHeight);
         if (gx >= 0 && gx < gridSize && gy >= 0 && gy < gridSize) {
             pixelGrid[gx][gy] = currentColor;
             updateDynamicTexture();
@@ -172,5 +176,5 @@ public class TextureCanvasWidget extends AbstractWidget {
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput output) {}
+    protected void updateWidgetNarration(NarrationElementOutput output) {}
 }

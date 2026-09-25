@@ -8,7 +8,7 @@
 
 **Faraday Ears & Tail — Customizable 3D Ears, Physics Tail, Body Modifier & Belt Pouch**
 
-A Minecraft 1.19.2 Forge mod that lets you become the fluffy Faraday! Fully customizable 3D ears, a living physics-driven tail, body figure modifications with independent jiggle physics, a 3D GUI preview and a decorative front belt pouch.
+A Minecraft 1.21.1 Forge mod that lets you become the fluffy Faraday! Fully customizable 3D ears, a living physics-driven tail, body figure modifications with independent jiggle physics, a 3D GUI preview and a decorative front belt pouch.
 
 **EARS 🐱**
 - 5 anatomical shapes: Faraday (with tufts), Kitsune, Cat, Wolf, Rabbit, Bear
@@ -41,7 +41,7 @@ A Minecraft 1.19.2 Forge mod that lets you become the fluffy Faraday! Fully cust
 - Pixel-art texture painting right in the GUI
 - Multiplayer sync — everyone sees your ears and tail!
 
-Requires: Minecraft 1.19.2, Forge 43.x, Java 17.
+Requires: Minecraft 1.21.1, NeoForge 21.1.x, Java 21.
 Open source (MIT) — GitHub: https://github.com/yellowfire/faradayears
 
 ---
@@ -50,7 +50,7 @@ Open source (MIT) — GitHub: https://github.com/yellowfire/faradayears
 
 **Faraday Ears & Tail — настраиваемые ушки, физический хвост, фигура и мешочек**
 
-Мод для Minecraft 1.19.2 Forge, который превращает вас в пушистого Фарадея! Объёмные настраиваемые ушки, живой хвост с физикой, модификация фигуры с независимой jiggle-физикой для каждой половины груди и бёдер, 3D-предпросмотр в GUI и декоративный поясной мешочек.
+Мод для Minecraft 1.21.1 Forge, который превращает вас в пушистого Фарадея! Объёмные настраиваемые ушки, живой хвост с физикой, модификация фигуры с независимой jiggle-физикой для каждой половины груди и бёдер, 3D-предпросмотр в GUI и декоративный поясной мешочек.
 
 - 5 форм ушек: Фарадей (с кисточками), Кицунэ, Котик, Волк, Кролик, Медведь
 - Настоящий 3D-объём: U-образные чаши с полостью и пушистой шерстью внутри
@@ -64,4 +64,4 @@ Open source (MIT) — GitHub: https://github.com/yellowfire/faradayears
 - GUI по клавише V (или G): орбитальная камера, пресеты, рисование текстуры
 - Синхронизация в мультиплеере
 
-Требования: Minecraft 1.19.2, Forge 43.x, Java 17. Открытый исходный код (MIT) — GitHub: https://github.com/yellowfire/faradayears
+Требования: Minecraft 1.21.1, NeoForge 21.1.x, Java 21. Открытый исходный код (MIT) — GitHub: https://github.com/yellowfire/faradayears

@@ -6,7 +6,7 @@
 * Нужен **JDK 17** (Temurin/Adoptium) — https://adoptium.net
 * Windows: `.\gradlew.bat build`
 * Linux/macOS: `chmod +x gradlew && ./gradlew build`
-* Готовый jar: `build/libs/FaradayEarsMod-1.19.2-1.0.0.jar`
+* Готовый jar: `build/libs/FaradayEarsMod-1.21.1-1.0.0.jar`
 
 ## Структура проекта
 ```

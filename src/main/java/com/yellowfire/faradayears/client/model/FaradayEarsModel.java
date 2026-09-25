@@ -213,19 +213,14 @@ public class FaradayEarsModel extends Model {
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        s0LeftEar.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        s0RightEar.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
+        s0LeftEar.render(poseStack, buffer, packedLight, packedOverlay, color);
+        s0RightEar.render(poseStack, buffer, packedLight, packedOverlay, color);
     }
 
     public void renderWithColorsAndShape(int shape, PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int primaryRgb, int secondaryRgb) {
-        float r1 = ((primaryRgb >> 16) & 0xFF) / 255.0f;
-        float g1 = ((primaryRgb >> 8) & 0xFF) / 255.0f;
-        float b1 = (primaryRgb & 0xFF) / 255.0f;
-
-        float r2 = ((secondaryRgb >> 16) & 0xFF) / 255.0f;
-        float g2 = ((secondaryRgb >> 8) & 0xFF) / 255.0f;
-        float b2 = (secondaryRgb & 0xFF) / 255.0f;
+        int color1 = 0xFF000000 | (primaryRgb & 0xFFFFFF);
+        int color2 = 0xFF000000 | (secondaryRgb & 0xFFFFFF);
 
         ModelPart[] lefts = { s0LeftEar, s1LeftEar, s2LeftEar, s3LeftEar, s4LeftEar };
         ModelPart[] rights = { s0RightEar, s1RightEar, s2RightEar, s3RightEar, s4RightEar };
@@ -240,26 +235,26 @@ public class FaradayEarsModel extends Model {
             s1LeftBow.visible = false;
             s1RightBow.visible = false;
         }
-        lefts[active].render(poseStack, buffer, packedLight, packedOverlay, r1, g1, b1, 1.0f);
-        rights[active].render(poseStack, buffer, packedLight, packedOverlay, r1, g1, b1, 1.0f);
+        lefts[active].render(poseStack, buffer, packedLight, packedOverlay, color1);
+        rights[active].render(poseStack, buffer, packedLight, packedOverlay, color1);
 
         leftInners[active].visible = true;
         rightInners[active].visible = true;
         poseStack.pushPose();
         lefts[active].translateAndRotate(poseStack);
-        leftInners[active].render(poseStack, buffer, packedLight, packedOverlay, r2, g2, b2, 1.0f);
+        leftInners[active].render(poseStack, buffer, packedLight, packedOverlay, color2);
         if (active == 1) {
             s1LeftBow.visible = true;
-            s1LeftBow.render(poseStack, buffer, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, 1.0f);
+            s1LeftBow.render(poseStack, buffer, packedLight, packedOverlay, 0xFFFFFFFF);
         }
         poseStack.popPose();
 
         poseStack.pushPose();
         rights[active].translateAndRotate(poseStack);
-        rightInners[active].render(poseStack, buffer, packedLight, packedOverlay, r2, g2, b2, 1.0f);
+        rightInners[active].render(poseStack, buffer, packedLight, packedOverlay, color2);
         if (active == 1) {
             s1RightBow.visible = true;
-            s1RightBow.render(poseStack, buffer, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, 1.0f);
+            s1RightBow.render(poseStack, buffer, packedLight, packedOverlay, 0xFFFFFFFF);
         }
         poseStack.popPose();
     }

@@ -161,20 +161,15 @@ public class FaradayTailModel extends Model {
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         for (int t = 0; t < 9; t++) {
-            if (tailRoots[t].visible) tailRoots[t].render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+            if (tailRoots[t].visible) tailRoots[t].render(poseStack, buffer, packedLight, packedOverlay, color);
         }
     }
 
     public void renderWithColorsAndSegments(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int primaryRgb, int secondaryRgb, int numTails, int numSegments) {
-        float r1 = ((primaryRgb >> 16) & 0xFF) / 255.0f;
-        float g1 = ((primaryRgb >> 8) & 0xFF) / 255.0f;
-        float b1 = (primaryRgb & 0xFF) / 255.0f;
-
-        float r2 = ((secondaryRgb >> 16) & 0xFF) / 255.0f;
-        float g2 = ((secondaryRgb >> 8) & 0xFF) / 255.0f;
-        float b2 = (secondaryRgb & 0xFF) / 255.0f;
+        int color1 = 0xFF000000 | (primaryRgb & 0xFFFFFF);
+        int color2 = 0xFF000000 | (secondaryRgb & 0xFFFFFF);
 
         boolean isSuperVolumetric = (numTails == 10);
         int activeTails = isSuperVolumetric ? 4 : Math.max(1, Math.min(9, numTails));
@@ -185,7 +180,7 @@ public class FaradayTailModel extends Model {
                 for (int s = 0; s < activeSegs; s++) {
                     tailSegs[t][s].visible = (s < activeSegs - 1);
                 }
-                tailRoots[t].render(poseStack, buffer, packedLight, packedOverlay, r1, g1, b1, 1.0f);
+                tailRoots[t].render(poseStack, buffer, packedLight, packedOverlay, color1);
             }
         }
 
@@ -193,7 +188,7 @@ public class FaradayTailModel extends Model {
             for (int s = 0; s < activeSegs; s++) {
                 tailTips[t][s].visible = (s == activeSegs - 1);
             }
-            tailTipsRoots[t].render(poseStack, buffer, packedLight, packedOverlay, r2, g2, b2, 1.0f);
+            tailTipsRoots[t].render(poseStack, buffer, packedLight, packedOverlay, color2);
         }
 
         for (int t = 0; t < activeTails; t++) {

@@ -1,8 +1,8 @@
-# FaradayEarsMod — Customizable Ears, Procedural Tail, Body Physics & Belt Pouch (1.19.2 Forge)
+# FaradayEarsMod — Customizable Ears, Procedural Tail, Body Physics & Belt Pouch (1.21.1 NeoForge)
 
 [🇷🇺 Русская версия](README.md) · [📜 Changelog](CHANGELOG.md) · [🚀 Publishing guide](GITHUB_SETUP.md)
 
-A client/server Minecraft **1.19.2 Forge** mod that adds fully customizable 3D ears, a physics-driven procedural tail, body/figure modifications with independent jiggle physics, a 3D GUI preview and a decorative front belt pouch — all in the style of the **Yellow Fire** YouTube channel character.
+A client/server Minecraft **1.21.1 Forge** mod that adds fully customizable 3D ears, a physics-driven procedural tail, body/figure modifications with independent jiggle physics, a 3D GUI preview and a decorative front belt pouch — all in the style of the **Yellow Fire** YouTube channel character.
 
 > **License:** MIT — open source, free to use, modify and distribute.
 
@@ -45,13 +45,13 @@ A client/server Minecraft **1.19.2 Forge** mod that adds fully customizable 3D e
 ---
 
 ## 🖥️ Requirements
-* Minecraft **1.19.2**
+* Minecraft **1.21.1**
 * Forge **43.3.0** or newer (`[43,)`)
 * Java **17**
 
 ## 📥 Installation
-1. Install Forge 1.19.2.
-2. Copy `FaradayEarsMod-1.19.2-1.0.0.jar` into your `.minecraft/mods/` folder.
+1. Install NeoForge 21.1.x.
+2. Copy `FaradayEarsMod-1.21.1-1.0.0.jar` into your `.minecraft/mods/` folder.
 3. Launch, press **V** (or **G**) in-game to open the customization GUI.
 
 ## 🛠️ Building from source

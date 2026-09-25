@@ -1,8 +1,6 @@
 {
     "pack": {
-        "description": "Faraday Ears & Tail resources",
-        "pack_format": 9,
-        "forge:resource_pack_format": 9,
-        "forge:data_pack_format": 10
+        "description": "Faraday Ears & Tail resources (NeoForge 1.21.1)",
+        "pack_format": 34
     }
 }

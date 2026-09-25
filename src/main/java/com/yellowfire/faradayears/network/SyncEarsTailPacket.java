@@ -1,17 +1,33 @@
 package com.yellowfire.faradayears.network;
 
-import com.yellowfire.faradayears.capability.PlayerEarsTailProvider;
-import net.minecraft.client.Minecraft;
+import com.yellowfire.faradayears.ModAttachments;
+import com.yellowfire.faradayears.capability.PlayerEarsTailData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.UUID;
-import java.util.function.Supplier;
 
-public class SyncEarsTailPacket {
+/**
+ * Пакет синхронизации настроек ушек/хвоста (Клиент <-> Сервер).
+ * NeoForge 1.21.1: реализует CustomPacketPayload.
+ */
+public class SyncEarsTailPacket implements CustomPacketPayload {
+
+    public static final CustomPacketPayload.Type<SyncEarsTailPacket> TYPE =
+            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("faradayears", "main"));
+
+    public static final StreamCodec<FriendlyByteBuf, SyncEarsTailPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, pkt) -> {
+                buf.writeUUID(pkt.playerId);
+                buf.writeNbt(pkt.dataTag);
+            },
+            buf -> new SyncEarsTailPacket(buf.readUUID(), buf.readNbt()));
+
     private final UUID playerId;
     private final CompoundTag dataTag;
 
@@ -20,38 +36,36 @@ public class SyncEarsTailPacket {
         this.dataTag = dataTag != null ? dataTag : new CompoundTag();
     }
 
-    public SyncEarsTailPacket(FriendlyByteBuf buf) {
-        this.playerId = buf.readUUID();
-        this.dataTag = buf.readNbt();
+    public UUID getPlayerId() {
+        return playerId;
     }
 
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeUUID(playerId);
-        buf.writeNbt(dataTag);
+    public CompoundTag getDataTag() {
+        return dataTag;
     }
 
-    public static void handle(SyncEarsTailPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    /**
+     * Единый обработчик обеих сторон: на сервере принимает изменения от владельца
+     * персонажа и рассылает их всем, на клиенте применяет данные к модели игрока.
+     * Клиентская часть вынесена в {@link ClientPacketHandler}, чтобы класс
+     * net.minecraft.client.* не грузился на выделенном сервере.
+     */
+    public static void handle(SyncEarsTailPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.getDirection().getReceptionSide().isServer()) {
-                ServerPlayer sender = context.getSender();
-                if (sender != null && sender.getUUID().equals(packet.playerId)) {
-                    sender.getCapability(PlayerEarsTailProvider.EARS_TAIL_DATA).ifPresent(data -> {
-                        data.loadNBTData(packet.dataTag);
-                        ModPacketHandler.sendToAllTracking(new SyncEarsTailPacket(sender.getUUID(), packet.dataTag), sender);
-                    });
+            if (context.player() instanceof ServerPlayer sender) {
+                if (sender.getUUID().equals(packet.playerId)) {
+                    PlayerEarsTailData data = ModAttachments.get(sender);
+                    data.loadNBTData(packet.dataTag);
+                    ModPacketHandler.sendToAllTracking(new SyncEarsTailPacket(sender.getUUID(), packet.dataTag), sender);
                 }
             } else {
-                if (Minecraft.getInstance().level != null && packet.playerId != null) {
-                    Player player = Minecraft.getInstance().level.getPlayerByUUID(packet.playerId);
-                    if (player != null) {
-                        player.getCapability(PlayerEarsTailProvider.EARS_TAIL_DATA).ifPresent(data -> {
-                            data.loadNBTData(packet.dataTag);
-                        });
-                    }
-                }
+                ClientPacketHandler.handleSync(packet);
             }
         });
-        context.setPacketHandled(true);
     }
 }

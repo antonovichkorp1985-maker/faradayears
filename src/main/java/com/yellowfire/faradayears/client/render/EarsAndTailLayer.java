@@ -1,12 +1,14 @@
 package com.yellowfire.faradayears.client.render;
 
-import com.yellowfire.faradayears.capability.PlayerEarsTailProvider;
+import com.yellowfire.faradayears.ModAttachments;
+import com.yellowfire.faradayears.capability.PlayerEarsTailData;
 import com.yellowfire.faradayears.client.model.FaradayBodyModel;
 import com.yellowfire.faradayears.client.model.FaradayEarsModel;
 import com.yellowfire.faradayears.client.model.FaradayTailModel;
 import com.yellowfire.faradayears.physics.TailPhysicsEngine;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -23,7 +25,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 
 public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    private static final ResourceLocation DEFAULT_TEXTURE = new ResourceLocation("faradayears", "textures/entity/faraday_ears_tail.png");
+    private static final ResourceLocation DEFAULT_TEXTURE = ResourceLocation.fromNamespaceAndPath("faradayears", "textures/entity/faraday_ears_tail.png");
 
     private final FaradayEarsModel earsModel;
     private final FaradayTailModel tailModel;
@@ -45,7 +47,8 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
     public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, AbstractClientPlayer player, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
         if (player.isInvisible()) return;
 
-        player.getCapability(PlayerEarsTailProvider.EARS_TAIL_DATA).ifPresent(data -> {
+        PlayerEarsTailData data = ModAttachments.get(player);
+        {
             ResourceLocation texture = DEFAULT_TEXTURE;
             VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
 
@@ -56,8 +59,8 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
             if (data.getGender() > 0 || data.isShowPouch()) {
                 poseStack.pushPose();
                 getParentModel().body.translateAndRotate(poseStack);
-                // ★ ТЕКСТУРА САКИНА ИГРОКА: используем player.getSkinTextureLocation() для 100% слияния со скином!
-                VertexConsumer skinBuffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(player.getSkinTextureLocation()));
+                // ★ ТЕКСТУРА СКИНА ИГРОКА: используем скин игрока для 100% слияния со скином!
+                VertexConsumer skinBuffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(player.getSkin().texture()));
                 bodyModel.setupAndRender(poseStack, skinBuffer, packedLight, OverlayTexture.NO_OVERLAY,
                         data.getGender(), data.isShowChest(), data.isShowHips(), data.isShowShoulders(), data.isShowPouch(),
                         data.getChestScaleX(), data.getChestScaleY(), data.getChestScaleZ(), data.getChestOffsetY(), data.getChestOffsetZ(),
@@ -87,9 +90,7 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                         data.getEarRotX() + physicsData.smoothRightEarPitch,
                         data.getEarRotY(),
                         data.getEarRotZ() + physicsData.smoothRightEarRoll,
-                        data.getEarScaleX(),
-                        data.getEarScaleY(),
-                        data.getEarScaleZ()
+                        data.getEarScaleX(), data.getEarScaleY(), data.getEarScaleZ()
                 );
 
                 earsModel.renderWithColorsAndShape(data.getEarShape(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, data.getEarColorPrimary(), data.getEarColorSecondary());
@@ -112,7 +113,7 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                 poseStack.translate(0.0D, 1.501D, 0.0D);
                 poseStack.scale(-1.0F, -1.0F, 1.0F);
                 float bodyRot = Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot);
-                poseStack.mulPose(com.mojang.math.Vector3f.YP.rotationDegrees(-(180.0F - bodyRot)));
+                poseStack.mulPose(Axis.YP.rotationDegrees(-(180.0F - bodyRot)));
 
                 poseStack.translate(-px, -py, -pz);
 
@@ -142,6 +143,6 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
                 poseStack.popPose();
             }
-        });
+        }
     }
 }

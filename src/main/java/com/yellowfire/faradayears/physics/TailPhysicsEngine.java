@@ -1,7 +1,7 @@
 package com.yellowfire.faradayears.physics;
 
+import com.yellowfire.faradayears.ModAttachments;
 import com.yellowfire.faradayears.capability.PlayerEarsTailData;
-import com.yellowfire.faradayears.capability.PlayerEarsTailProvider;
 import com.yellowfire.faradayears.client.render.ProceduralTailRenderer;
 import com.yellowfire.faradayears.physics.core.PhysicsChain;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -138,9 +138,10 @@ public class TailPhysicsEngine {
             }
         }
 
-        player.getCapability(PlayerEarsTailProvider.EARS_TAIL_DATA).ifPresent(data -> {
+        PlayerEarsTailData data = ModAttachments.get(player);
+        {
             Vec3 playerPos = player.position();
-            Vec3 root = applyTailOffset(computeTailRoot(player), player, data.getTailOffsetX(), data.getTailOffsetY(), data.getTailOffsetZ());
+            Vec3 root = applyTailOffset(computeTailRoot(player, data), player, data.getTailOffsetX(), data.getTailOffsetY(), data.getTailOffsetZ());
             Vec3 rootVelocity = root.subtract(state.prevRoot);
             float deltaHeadYaw = Mth.wrapDegrees(player.yHeadRot - state.prevHeadRot);
 
@@ -200,9 +201,9 @@ public class TailPhysicsEngine {
                 inst.chain.iterations = 11;
 
                 if (data.isAnimate()) {
-                    Vec3 gravity = new Vec3(0, player.isFallFlying() ? -0.050D : (player.isOnGround() ? -0.070D : -0.060D), 0);
-                    double baseStiffness = player.isOnGround() ? 0.45D : 0.36D;
-                    inst.chain.simulateTailRope(player.level, player, root, rootVelocity, gravity, baseDir, baseStiffness,
+                    Vec3 gravity = new Vec3(0, player.isFallFlying() ? -0.050D : (player.onGround() ? -0.070D : -0.060D), 0);
+                    double baseStiffness = player.onGround() ? 0.45D : 0.36D;
+                    inst.chain.simulateTailRope(player.level(), player, root, rootVelocity, gravity, baseDir, baseStiffness,
                             data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t);
                 } else {
                     inst.chain.reset(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
@@ -217,17 +218,16 @@ public class TailPhysicsEngine {
             state.prevPlayerPos = playerPos;
             state.prevBodyRot = player.yBodyRot;
             state.prevHeadRot = player.yHeadRot;
-        });
+        }
     }
 
-    private Vec3 computeTailRoot(AbstractClientPlayer player) {
+    private Vec3 computeTailRoot(AbstractClientPlayer player, PlayerEarsTailData data) {
         double bodyYawRad = Math.toRadians(player.yBodyRot);
         double sinBody = Math.sin(bodyYawRad);
         double cosBody = Math.cos(bodyYawRad);
 
         double zOffsetBlocks = 0.0D;
         double yOffsetBlocks = 0.0D;
-        PlayerEarsTailData data = player.getCapability(PlayerEarsTailProvider.EARS_TAIL_DATA).orElse(null);
         if (data != null) {
             zOffsetBlocks = data.getTailRotX() / 60.0D;
             yOffsetBlocks = data.getTailRotX() / 32.0D;
@@ -269,6 +269,10 @@ public class TailPhysicsEngine {
         }
     }
 
+    private static boolean isSolidBlock(BlockState state, Level level, BlockPos pos) {
+        return !state.isAir() && !state.getCollisionShape(level, pos).isEmpty();
+    }
+
     private void simulateEars(PlayerPhysicsData state, AbstractClientPlayer player, Vec3 playerPos, float deltaHeadYaw) {
         Vec3 playerVelocity = playerPos.subtract(state.prevPlayerPos);
         double horizontalSpeed = Math.sqrt(playerVelocity.x * playerVelocity.x + playerVelocity.z * playerVelocity.z);
@@ -279,7 +283,7 @@ public class TailPhysicsEngine {
         double headCenterY = playerPos.y + (player.isCrouching() ? 1.45D : 1.62D);
         double topOfHeadY = playerPos.y + (player.isCrouching() ? 1.48D : 1.80D);
 
-        Level level = player.level;
+        Level level = player.level();
         int leftStage = 0;
         int rightStage = 0;
 
@@ -294,11 +298,11 @@ public class TailPhysicsEngine {
                 double lowestCeiling = Double.NaN;
                 AABB checkZone = new AABB(ex - 0.24D, topOfHeadY, ez - 0.24D,
                                           ex + 0.24D, topOfHeadY + 0.60D, ez + 0.24D);
-                BlockPos minPos = new BlockPos(checkZone.minX, checkZone.minY, checkZone.minZ);
-                BlockPos maxPos = new BlockPos(checkZone.maxX, checkZone.maxY, checkZone.maxZ);
+                BlockPos minPos = BlockPos.containing(checkZone.minX, checkZone.minY, checkZone.minZ);
+                BlockPos maxPos = BlockPos.containing(checkZone.maxX, checkZone.maxY, checkZone.maxZ);
                 for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
                     BlockState bState = level.getBlockState(pos);
-                    if (!bState.isAir() && bState.getMaterial().isSolid()) {
+                    if (isSolidBlock(bState, level, pos)) {
                         VoxelShape shape = bState.getCollisionShape(level, pos);
                         if (!shape.isEmpty()) {
                             AABB box = shape.bounds().move(pos);
@@ -345,11 +349,11 @@ public class TailPhysicsEngine {
 
                 if (level != null) {
                     AABB sphereBox = getSegmentAABB(hb.worldX, hb.worldY, hb.worldZ, hb.radius);
-                    BlockPos minP = new BlockPos(sphereBox.minX, sphereBox.minY, sphereBox.minZ);
-                    BlockPos maxP = new BlockPos(sphereBox.maxX, sphereBox.maxY, sphereBox.maxZ);
+                    BlockPos minP = BlockPos.containing(sphereBox.minX, sphereBox.minY, sphereBox.minZ);
+                    BlockPos maxP = BlockPos.containing(sphereBox.maxX, sphereBox.maxY, sphereBox.maxZ);
                     for (BlockPos pos : BlockPos.betweenClosed(minP, maxP)) {
                         BlockState bState = level.getBlockState(pos);
-                        if (!bState.isAir() && bState.getMaterial().isSolid()) {
+                        if (isSolidBlock(bState, level, pos)) {
                             VoxelShape shape = bState.getCollisionShape(level, pos);
                             if (!shape.isEmpty()) {
                                 AABB box = shape.bounds().move(pos);
@@ -365,7 +369,7 @@ public class TailPhysicsEngine {
             }
         }
 
-        float gravityTilt = player.isOnGround() ? 3.0f : 5.0f;
+        float gravityTilt = player.onGround() ? 3.0f : 5.0f;
         float baseTargetPitch = gravityTilt - (float) (horizontalSpeed * 22.0D) + (float) (vy * 18.0D);
         float baseTargetRoll = -deltaHeadYaw * 0.45f;
 
@@ -478,7 +482,7 @@ public class TailPhysicsEngine {
     }
 
     private void simulateBodyCollisions(PlayerPhysicsData state, AbstractClientPlayer player, Vec3 playerPos, PlayerEarsTailData data) {
-        Level level = player.level;
+        Level level = player.level();
         if (level == null) return;
 
         double cos = Math.cos(Math.toRadians(player.yBodyRot));
@@ -532,7 +536,7 @@ public class TailPhysicsEngine {
             collideAndSquashHips(level, boxHR, state, false);
         }
 
-        // ★ 4. КОЛЛИЗИЯ ПОЯСНОГО МЕШОЧКА С БЛОКАМИ И ЗАБОРАМИ В МИРЕ:
+        // ★ 4. КОЛЛИЗИЯ ПЯСНОГО МЕШОЧКА С БЛОКАМИ И ЗАБОРАМИ В МИРЕ:
         if (data.isShowPouch()) {
             double pouchHeight = playerPos.y + (player.isCrouching() ? 0.76D : 0.96D) + (data.getPouchOffsetY() + 10.5f + state.pouchJiggleY) * 0.0625D;
             double pX = playerPos.x + (data.getPouchOffsetX() * 0.0625D) * rx + fx * (0.14D + (data.getPouchOffsetZ() - 2.1f) * 0.0625D + data.getPouchScaleZ() * 0.15D);
@@ -543,11 +547,11 @@ public class TailPhysicsEngine {
     }
 
     private void collideAndSquashChest(Level level, AABB zone, PlayerPhysicsData state, boolean isLeft) {
-        BlockPos minPos = new BlockPos(zone.minX, zone.minY, zone.minZ);
-        BlockPos maxPos = new BlockPos(zone.maxX, zone.maxY, zone.maxZ);
+        BlockPos minPos = BlockPos.containing(zone.minX, zone.minY, zone.minZ);
+        BlockPos maxPos = BlockPos.containing(zone.maxX, zone.maxY, zone.maxZ);
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             BlockState bState = level.getBlockState(pos);
-            if (!bState.isAir() && bState.getMaterial().isSolid()) {
+            if (isSolidBlock(bState, level, pos)) {
                 VoxelShape shape = bState.getCollisionShape(level, pos);
                 if (!shape.isEmpty()) {
                     AABB box = shape.bounds().move(pos);
@@ -574,11 +578,11 @@ public class TailPhysicsEngine {
     }
 
     private void collideAndSquashHips(Level level, AABB zone, PlayerPhysicsData state, boolean isLeft) {
-        BlockPos minPos = new BlockPos(zone.minX, zone.minY, zone.minZ);
-        BlockPos maxPos = new BlockPos(zone.maxX, zone.maxY, zone.maxZ);
+        BlockPos minPos = BlockPos.containing(zone.minX, zone.minY, zone.minZ);
+        BlockPos maxPos = BlockPos.containing(zone.maxX, zone.maxY, zone.maxZ);
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             BlockState bState = level.getBlockState(pos);
-            if (!bState.isAir() && bState.getMaterial().isSolid()) {
+            if (isSolidBlock(bState, level, pos)) {
                 VoxelShape shape = bState.getCollisionShape(level, pos);
                 if (!shape.isEmpty()) {
                     AABB box = shape.bounds().move(pos);
@@ -605,11 +609,11 @@ public class TailPhysicsEngine {
     }
 
     private void collideAndSquashPouch(Level level, AABB zone, PlayerPhysicsData state) {
-        BlockPos minPos = new BlockPos(zone.minX, zone.minY, zone.minZ);
-        BlockPos maxPos = new BlockPos(zone.maxX, zone.maxY, zone.maxZ);
+        BlockPos minPos = BlockPos.containing(zone.minX, zone.minY, zone.minZ);
+        BlockPos maxPos = BlockPos.containing(zone.maxX, zone.maxY, zone.maxZ);
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             BlockState bState = level.getBlockState(pos);
-            if (!bState.isAir() && bState.getMaterial().isSolid()) {
+            if (isSolidBlock(bState, level, pos)) {
                 VoxelShape shape = bState.getCollisionShape(level, pos);
                 if (!shape.isEmpty()) {
                     AABB box = shape.bounds().move(pos);
