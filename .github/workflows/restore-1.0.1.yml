@@ -1,0 +1,31 @@
+name: restore-1.0.1
+
+# Одноразовый реставратор релиза 1.0.1 (fox-tail-lift):
+# Google Drive недоступен из песочницы, поэтому workspace-архив (65,7 МБ)
+# скачивается прямо здесь, из него восстанавливается ветка
+# 1.21.1-fox-tail-lift и публикуется релиз v1.0.1 (main не затрагивается).
+# Запуск: пуш в ветку сессии с маркером [restore-1.0.1] в сообщении коммита.
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0ee50-faradayears]
+
+concurrency:
+  group: restore-1.0.1
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[restore-1.0.1]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore 1.0.1 from Drive workspace
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/restore_1_0_1.sh
