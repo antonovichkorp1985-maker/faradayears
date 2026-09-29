@@ -33,7 +33,7 @@ public class TextureCanvasWidget extends AbstractWidget {
     private Runnable onPaintListener;
 
     public TextureCanvasWidget(int x, int y, int width, int height) {
-        super(x, y, width, height, Component.literal("Полотно текстуры"));
+        super(x, y, width, height, Component.translatable("gui.faradayears.canvas.title"));
         initDefaultPattern();
         updateDynamicTexture();
     }
@@ -156,17 +156,17 @@ public class TextureCanvasWidget extends AbstractWidget {
             int zoneH = 16 * cellHeight;
             int colW = 16 * cellWidth;
             int[] zoneTints = {0x2E3AA0F0, 0x2E2ECC71, 0x2EF5A037, 0x2EE74C3C};
-            String[] zoneNames = {
-                    "УШИ: внешний мех",
-                    "УШИ: внутренний мех",
-                    "ХВОСТ: основание -> кончик",
-                    "ХВОСТ: пушистый кончик"
+            Component[] zoneNames = {
+                    Component.translatable("gui.faradayears.canvas.zone.0"),
+                    Component.translatable("gui.faradayears.canvas.zone.1"),
+                    Component.translatable("gui.faradayears.canvas.zone.2"),
+                    Component.translatable("gui.faradayears.canvas.zone.3")
             };
-            String[] zoneSubs = {
+            Component[] zoneSubs = {
                     null, // вместо подписи — чипы столбцов форм ушек
-                    "Бантик: столбец X=48..63",
-                    "верх = корень хвоста",
-                    "низ = самый кончик"
+                    Component.translatable("gui.faradayears.canvas.zone_sub.1"),
+                    Component.translatable("gui.faradayears.canvas.zone_sub.2"),
+                    Component.translatable("gui.faradayears.canvas.zone_sub.3")
             };
             for (int z = 0; z < 4; z++) {
                 int zy = y + z * zoneH;
@@ -175,7 +175,12 @@ public class TextureCanvasWidget extends AbstractWidget {
                 guiGraphics.drawString(font, zoneNames[z], x + 4, zy + 3, 0xFFFFFFFF, false);
                 if (z == 0) {
                     // Столбцы = формы ушек (как во вкладке «Ушки»):
-                    String[] cols = {"Фар", "Киц", "Влк", "Крл"};
+                    Component[] cols = {
+                            Component.translatable("gui.faradayears.canvas.col.0"),
+                            Component.translatable("gui.faradayears.canvas.col.1"),
+                            Component.translatable("gui.faradayears.canvas.col.2"),
+                            Component.translatable("gui.faradayears.canvas.col.3")
+                    };
                     for (int c = 0; c < 4; c++) {
                         int cx = x + c * colW;
                         guiGraphics.fill(cx + 1, zy + 13, cx + colW - 1, zy + 22, 0x66000000);
