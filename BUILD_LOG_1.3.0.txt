@@ -21,12 +21,12 @@ Loaded 131 artifacts from /home/runner/work/faradayears/faradayears/build/tmp/cr
 [1m*** Started working on [4mdownloadServer[23;0m[23;0m
 [1m*** Started working on [4mdownloadClient[23;0m[23;0m
 [1m*** Started working on [4mdownloadClientMappings[23;0m[23;0m
+ [1m[92m✓[23;0m Completed [4mdownloadClientMappings[23;0m in 0.04s
  [1m[92m✓[23;0m Completed [4mdownloadServer[23;0m in 0.04s
- [1m[92m✓[23;0m Completed [4mdownloadClient[23;0m in 0.04s
- [1m[92m✓[23;0m Completed [4mdownloadClientMappings[23;0m in 0.03s
+ [1m[92m✓[23;0m Completed [4mdownloadClient[23;0m in 0.03s
 [1m*** Started working on [4mstripClient[23;0m[23;0m
- [1m[92m♻[23;0m Used cache of [4mstripClient[23;0m in 0.00s
 [1m*** Started working on [4mmergeMappings[23;0m[23;0m
+ [1m[92m♻[23;0m Used cache of [4mstripClient[23;0m in 0.00s
  [1m[92m♻[23;0m Used cache of [4mmergeMappings[23;0m in 0.00s
 [1m*** Started working on [4mextractServer[23;0m[23;0m
  [1m[92m♻[23;0m Used cache of [4mextractServer[23;0m in 0.00s
@@ -44,40 +44,26 @@ Loaded 131 artifacts from /home/runner/work/faradayears/faradayears/build/tmp/cr
  [1m[92m♻[23;0m Used cache of [4mapplyDevTransforms[23;0m in 0.00s
 [1m*** Started working on [4mbinaryWithNeoForge[23;0m[23;0m
  [1m[92m♻[23;0m Used cache of [4mbinaryWithNeoForge[23;0m in 0.00s
-Total runtime: 1.62s
+Total runtime: 1.85s
 
 
 > Task :compileJava
-/home/runner/work/faradayears/faradayears/src/main/java/com/yellowfire/faradayears/physics/core/PhysicsChain.java:338: error: cannot find symbol
-        boolean sleeping = owner.isSleeping();
-                                ^
-  symbol:   method isSleeping()
-  location: variable owner of type Entity
 Note: /home/runner/work/faradayears/faradayears/src/main/java/com/yellowfire/faradayears/client/gui/EarsTailCustomizationScreen.java uses or overrides a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
-1 error
 
-> Task :compileJava FAILED
+> Task :processResources
+> Task :classes
+> Task :jarJar NO-SOURCE
+> Task :jar
+> Task :assemble
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test NO-SOURCE
+> Task :check UP-TO-DATE
+> Task :build
 
 [Incubating] Problems report is available at: file:///home/runner/work/faradayears/faradayears/build/reports/problems/problems-report.html
 
-FAILURE: Build failed with an exception.
-
-* What went wrong:
-Execution failed for task ':compileJava'.
-> Compilation failed; see the compiler output below.
-  /home/runner/work/faradayears/faradayears/src/main/java/com/yellowfire/faradayears/physics/core/PhysicsChain.java:338: error: cannot find symbol
-          boolean sleeping = owner.isSleeping();
-                                  ^
-    symbol:   method isSleeping()
-    location: variable owner of type Entity
-  Note: /home/runner/work/faradayears/faradayears/src/main/java/com/yellowfire/faradayears/client/gui/EarsTailCustomizationScreen.java uses or overrides a deprecated API.
-  Note: Recompile with -Xlint:deprecation for details.
-  1 error
-
-* Try:
-> Check your code and dependencies to fix the compilation error(s)
-> Run with --scan to get full insights.
-
-BUILD FAILED in 19s
-2 actionable tasks: 2 executed
+BUILD SUCCESSFUL in 23s
+4 actionable tasks: 4 executed
