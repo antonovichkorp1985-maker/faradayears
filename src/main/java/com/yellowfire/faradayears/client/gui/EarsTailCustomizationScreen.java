@@ -190,6 +190,11 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("Красно-коричн."), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 156, topPos + 122, 88, 18).build());
             addRenderableWidget(Button.builder(Component.literal("Белый кончик"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 156, topPos + 142, 88, 18).build());
             addRenderableWidget(Button.builder(Component.literal("🧽 Ластик (или ПКМ)"), b -> canvasWidget.setCurrentColorTransparent()).bounds(panelLeft + 156, topPos + 162, 88, 18).build());
+            // ★ 1.3.0: «поверхностный слой» — подписи зон поверх канваса (какая область за что отвечает):
+            addRenderableWidget(Button.builder(Component.literal("🏷 Зоны: " + (canvasWidget.isZoneOverlayVisible() ? "ВКЛ" : "ВЫКЛ")), b -> {
+                canvasWidget.toggleZoneOverlay();
+                b.setMessage(Component.literal("🏷 Зоны: " + (canvasWidget.isZoneOverlayVisible() ? "ВКЛ" : "ВЫКЛ")));
+            }).bounds(panelLeft + 156, topPos + 182, 88, 18).build());
         } else if (activeTab == 4) {
             addRenderableWidget(Button.builder(Component.literal("Гендер: " + getGenderName(localData.getGender())), b -> {
                 localData.setGender((localData.getGender() + 1) % 4);
@@ -303,10 +308,10 @@ public class EarsTailCustomizationScreen extends Screen {
         };
     }
 
-    /** ★ 1.2.0: название режима физики хвоста для кнопки во вкладке «Хвост». */
+    /** ★ 1.2.0/1.3.0: название режима физики хвоста для кнопки во вкладке «Хвост». */
     private String getPhysicsModeName(int mode) {
         return switch (mode) {
-            case 1 -> "Баланс (дуга + касание земли)";
+            case 1 -> "Реалистичная (кошачья, обвивается)";
             case 2 -> "Поднятая дуга (1.0.1)";
             default -> "Классика (стелется, 1.0.0)";
         };
@@ -512,15 +517,17 @@ public class EarsTailCustomizationScreen extends Screen {
 
         guiGraphics.fill(width / 2 - 30, 35, width - 15, height - 35, 0xBB1E1A17);
 
-        if (activeTab == 3) {
-            int infoTop = 42 + 152;
-            guiGraphics.drawString(font, "ℹ️ ПОДСКАЗКА ПО ЮВ-РАЗВЁРТКЕ 64x64 (БЕЗ НАЛОЖЕНИЙ):", width / 2 - 20, infoTop, 0xFFEE8C1E);
-            guiGraphics.drawString(font, "1. Нажми [💾 Скачать понятный шаблон развёртки (64x64.png)].", width / 2 - 20, infoTop + 12, 0xDDDDDD);
-            guiGraphics.drawString(font, "2. В папке игры (.minecraft) появится 'faraday_template.png'.", width / 2 - 20, infoTop + 22, 0xAAAAAA);
-            guiGraphics.drawString(font, "   • Полоса Y=0..15 — Внешняя шерсть Ушек.", width / 2 - 20, infoTop + 32, 0x37C0F5);
-            guiGraphics.drawString(font, "   • Полоса Y=16..31 — Внутренняя шерсть раковины и Бантик (X=48..63).", width / 2 - 20, infoTop + 42, 0x2ECC71);
-            guiGraphics.drawString(font, "   • Полоса Y=32..63 — Шерсть Хвоста (Y=32..47) и его Кончика (Y=48..63).", width / 2 - 20, infoTop + 52, 0xF5C037);
-            guiGraphics.drawString(font, "3. Раскрась в редакторе, сохрани как 'faraday_custom.png' и загрузи!", width / 2 - 20, infoTop + 62, 0xDDDDDD);
+        if (activeTab == 3 && canvasWidget != null) {
+            // ★ 1.3.0: индикатор текущего цвета — сразу видно, чем сейчас рисуешь:
+            int cc = canvasWidget.getCurrentColorArgb();
+            boolean eraser = (cc >>> 24) == 0;
+            guiGraphics.fill(width / 2 + 131, 246, width / 2 + 143, 258, eraser ? 0xFF666666 : cc);
+            guiGraphics.drawString(font, eraser ? "Ластик" : "Цвет", width / 2 + 147, 248, 0xFFEEEEEE, false);
+            if (height > 280) {
+                // ★ 1.3.0: короткая шпаргалка по развёртке (теперь v идёт ВДОЛЬ хвоста):
+                guiGraphics.drawString(font, "Верх канваса = корень хвоста, низ = кончик.", width / 2 - 25, 259, 0xFFEE8C1E, false);
+                guiGraphics.drawString(font, "Горизонталь = оборот вокруг хвоста.", width / 2 - 25, 270, 0xFFBBBBBB, false);
+            }
         }
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);

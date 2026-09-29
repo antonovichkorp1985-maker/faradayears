@@ -26,6 +26,8 @@ public class TextureCanvasWidget extends AbstractWidget {
     private final int gridSize = 64;
     private final int[][] pixelGrid = new int[gridSize][gridSize];
     private int currentColor = 0xFFEE8C1E; // Оранжево-жёлтый по умолчанию
+    /** ★ 1.3.0: «поверхностный слой» — полупрозрачная подсказка зон поверх пикселей. */
+    private boolean showZoneOverlay = true;
     private DynamicTexture dynamicTexture;
     private ResourceLocation dynamicTextureLocation;
     private Runnable onPaintListener;
@@ -79,6 +81,27 @@ public class TextureCanvasWidget extends AbstractWidget {
         this.currentColor = 0x00000000;
     }
 
+    /** ★ 1.3.0: текущий цвет для индикатора-квадратика в GUI. */
+    public int getCurrentColorArgb() {
+        return currentColor;
+    }
+
+    /** ★ 1.3.0: показать/скрыть поверхностный слой с подписями зон. */
+    public void toggleZoneOverlay() {
+        this.showZoneOverlay = !this.showZoneOverlay;
+    }
+
+    public boolean isZoneOverlayVisible() {
+        return showZoneOverlay;
+    }
+
+    /** ★ 1.3.0 ФИКС: ПКМ на канвасе теперь действительно работает ластиком —
+     *  vanilla-виджеты по умолчанию принимают только кнопку 0. */
+    @Override
+    protected boolean isValidClickButton(int button) {
+        return button == 0 || button == 1;
+    }
+
     public void importFromNativeImage(NativeImage img) {
         if (img != null) {
             int w = Math.min(gridSize, img.getWidth());
@@ -123,6 +146,45 @@ public class TextureCanvasWidget extends AbstractWidget {
             int lineY = y + i * cellHeight;
             guiGraphics.fill(lineX, y, lineX + 1, y + height, 0x66FFFFFF);
             guiGraphics.fill(x, lineY, x + width, lineY + 1, 0x66FFFFFF);
+        }
+
+        // ★ 1.3.0 «ПОВЕРХНОСТНЫЙ СЛОЙ»: полупрозрачные тинты + подписи, какая зона канваса
+        // за какую часть модели отвечает. Это НЕ текстура — просто подсказка сверху,
+        // включается/выключается кнопкой 🏷 в GUI:
+        if (showZoneOverlay) {
+            net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+            int zoneH = 16 * cellHeight;
+            int colW = 16 * cellWidth;
+            int[] zoneTints = {0x2E3AA0F0, 0x2E2ECC71, 0x2EF5A037, 0x2EE74C3C};
+            String[] zoneNames = {
+                    "УШИ: внешний мех",
+                    "УШИ: внутренний мех",
+                    "ХВОСТ: основание -> кончик",
+                    "ХВОСТ: пушистый кончик"
+            };
+            String[] zoneSubs = {
+                    null, // вместо подписи — чипы столбцов форм ушек
+                    "Бантик: столбец X=48..63",
+                    "верх = корень хвоста",
+                    "низ = самый кончик"
+            };
+            for (int z = 0; z < 4; z++) {
+                int zy = y + z * zoneH;
+                guiGraphics.fill(x, zy, x + width, zy + zoneH, zoneTints[z]);
+                guiGraphics.fill(x + 2, zy + 2, x + width - 2, zy + 12, 0x88000000);
+                guiGraphics.drawString(font, zoneNames[z], x + 4, zy + 3, 0xFFFFFFFF, false);
+                if (z == 0) {
+                    // Столбцы = формы ушек (как во вкладке «Ушки»):
+                    String[] cols = {"Фар", "Киц", "Влк", "Крл"};
+                    for (int c = 0; c < 4; c++) {
+                        int cx = x + c * colW;
+                        guiGraphics.fill(cx + 1, zy + 13, cx + colW - 1, zy + 22, 0x66000000);
+                        guiGraphics.drawCenteredString(font, cols[c], cx + colW / 2, zy + 14, 0xFFE8E8E8);
+                    }
+                } else if (zoneSubs[z] != null) {
+                    guiGraphics.drawString(font, zoneSubs[z], x + 4, zy + 14, 0xFFDDDDDD, false);
+                }
+            }
         }
     }
 

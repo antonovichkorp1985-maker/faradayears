@@ -15,16 +15,18 @@ import java.util.List;
  * exits the lower back and bends toward the ground (`именно между первыми суставами`).
  *
  * ★ 1.2.0 — ТРИ РЕЖИМА ФИЗИКИ ХВОСТА (переключаются в GUI, синхронизируются по сети):
- *  - {@link #MODE_CLASSIC}  «Классика»   — поведение 1.0.0: мягкая верёвка, стелется по земле
- *                                          (градиент гравитации к кончику + settleDistalNearGround).
- *  - {@link #MODE_BALANCED} «Баланс»     — новый средний режим: приподнятая дуга, но кончик
- *                                          мягко касается земли (полсилы поддержки и присадки).
- *  - {@link #MODE_LIFTED}   «Поднятая»   — поведение 1.0.1 fox-tail-lift: горизонтальный выход
- *                                          из поясницы, приподнятая дуга, земля не притягивает.
+ *  - {@link #MODE_CLASSIC}   «Классика»     — поведение 1.0.0: мягкая верёвка, стелется по земле
+ *                                              (градиент гравитации к кончику + settleDistalNearGround).
+ *  - {@link #MODE_REALISTIC} «Реалистичная»  — ★ 1.3.0: кошачий/лисий хвост. Естественный S-профиль
+ *                                              (висит с подкурчиком кончика), лёгкое «дыхание» в покое,
+ *                                              а когда игрок СИДИТ или СПИТ — хвост сам обвивается
+ *                                              вокруг ног спиралью, как у настоящего кота.
+ *  - {@link #MODE_LIFTED}    «Поднятая»     — поведение 1.0.1 fox-tail-lift: горизонтальный выход
+ *                                              из поясницы, приподнятая дуга, земля не притягивает.
  */
 public class PhysicsChain {
     public static final int MODE_CLASSIC = 0;
-    public static final int MODE_BALANCED = 1;
+    public static final int MODE_REALISTIC = 1;
     public static final int MODE_LIFTED = 2;
 
     public final List<PhysicsParticle> particles = new ArrayList<>();
@@ -33,6 +35,9 @@ public class PhysicsChain {
     public double damping = 0.84D;
     public int iterations = 10;
     public int physicsMode = MODE_CLASSIC;
+
+    /** ★ 1.3.0: 0..1 — насколько хвост сейчас «обвит» вокруг ног (плавный вход/выход из позы сидя). */
+    public double sitBlend = 0.0D;
 
     private final PhysicsWorldCollider collider = new PhysicsWorldCollider();
 
@@ -74,8 +79,9 @@ public class PhysicsChain {
 
     public void simulateTailRope(Level level, Entity owner, Vec3 root, Vec3 rootVelocity,
                                  Vec3 gravity, Vec3 baseDirection, double baseStiffness,
-                                 int wagAxis, float wagAmp, float wagSpeed, int tailIndex) {
+                                 int wagAxis, float wagAmp, float wagSpeed, int tailIndex, double sitBlendIn) {
         if (particles.isEmpty()) return;
+        this.sitBlend = Math.max(0.0D, Math.min(1.0D, sitBlendIn));
 
         if (rootVelocity.lengthSqr() > 9.0D) {
             reset(root, baseDirection, particles.size(), segmentLength, particles.get(0).radius);
@@ -90,10 +96,15 @@ public class PhysicsChain {
         sideVector = sideVector.normalize();
         Vec3 upVector = sideVector.cross(baseDir).normalize();
 
+        // ★ 1.3.0: цели «обвивания вокруг ног» для позы сидя/сна (кошачий заворот):
+        Vec3[] sitTargets = (sitBlend > 0.01D && owner != null)
+                ? computeSitCurlTargets(level, owner, baseDir, root)
+                : null;
+
         // 1) Verlet integration. Распределение гравитации зависит от режима:
-        //    Классика — почти невесомое основание и усиленный к кончику градиент (1.0.0);
-        //    Баланс   — смягчённый градиент;
-        //    Поднятая — одинаковая гравитация для всех частиц (1.0.1).
+        //    Классика   — почти невесомое основание и усиленный к кончику градиент (1.0.0);
+        //    Реалистичная — естественный градиент: несущее основание + тяжёлый кончик;
+        //    Поднятая   — одинаковая гравитация для всех частиц (1.0.1).
         for (int i = 0; i < particles.size(); i++) {
             PhysicsParticle p = particles.get(i);
             p.touchingGround = false;
@@ -106,15 +117,21 @@ public class PhysicsChain {
                 if (wagAxis == 0) lateralWag = sideVector.scale(wagForce * distal);
                 else if (wagAxis == 1) lateralWag = upVector.scale(wagForce * distal);
                 else if (wagAxis == 2) lateralWag = sideVector.scale(wagForce * distal).add(upVector.scale(wagForce2 * distal));
+            } else if (physicsMode == MODE_REALISTIC && i > 0) {
+                // ★ 1.3.0: «дыхание» живого хвоста — едва заметное покачивание в покое (не в обвиве):
+                double idlePhase = (owner != null ? owner.tickCount : 0.0D) * 0.09D;
+                double idleForce = Math.sin(idlePhase - distal * 2.4D) * 0.0012D * (1.0D - sitBlend);
+                lateralWag = sideVector.scale(idleForce * distal);
             }
             double gScale;
             if (physicsMode == MODE_CLASSIC) {
                 gScale = (i == 0) ? 0.08D : (1.0D + distal * 0.35D);
-            } else if (physicsMode == MODE_BALANCED) {
-                gScale = (i == 0) ? 0.45D : (0.85D + distal * 0.20D);
+            } else if (physicsMode == MODE_REALISTIC) {
+                gScale = (i == 0) ? 0.30D : (0.88D + distal * 0.22D);
             } else {
                 gScale = 1.0D;
             }
+            if (sitBlend > 0.0D) gScale *= (1.0D - 0.65D * sitBlend); // в обвиве хвост почти невесомый
             p.applyForce(gravity.scale(gScale));
             if (lateralWag.lengthSqr() > 0.0D) p.applyForce(lateralWag);
             p.verlet(damping);
@@ -177,23 +194,24 @@ public class PhysicsChain {
                         if (crouching) restWeight *= 0.90D;
                         p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
                     }
-                } else if (physicsMode == MODE_BALANCED) {
-                    // ★ БАЛАНС: средние значения между Классикой и Поднятой —
-                    //   дуга держится, но мягче; кончику позволено опускаться к земле.
+                } else if (physicsMode == MODE_REALISTIC) {
+                    // ★ РЕАЛИСТИЧНАЯ (кошачья): основание держит хвост у поясницы,
+                    //   середина мягко провисает под своей тяжестью, кончик свободен —
+                    //   форму держит S-профиль из restDirection, а не жёсткая дуга.
                     if (i == 0) {
-                        double k0 = baseStiffness * (0.50D + 0.50D * groundFade);
+                        double k0 = baseStiffness * (0.42D + 0.38D * groundFade);
                         p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
-                    } else if (i < 4) {
+                    } else if (i < 6) {
                         Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double kSpan = (0.38D - i * 0.07D) * baseStiffness;
-                        double effectiveK = kSpan * (0.20D + 0.80D * groundFade);
+                        double kSpan = (0.30D - i * 0.045D) * baseStiffness;
+                        double effectiveK = kSpan * (0.25D + 0.75D * groundFade);
                         p.position = lerp(projected, arcTarget, effectiveK);
                     } else {
                         Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double restWeight = baseStiffness * Mth.lerp(distal, 0.34D, 0.16D);
-                        restWeight *= 1.0D + 0.18D * (1.0D - groundFade);
+                        double restWeight = baseStiffness * Mth.lerp(distal, 0.20D, 0.10D);
+                        restWeight *= 1.0D + 0.10D * (1.0D - groundFade);
                         if (crouching) restWeight *= 0.90D;
-                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.04D, 0.18D));
+                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.03D, 0.14D));
                     }
                 } else {
                     // ★ КЛАССИКА (1.0.0): слабое основание, микро-суставы у корня,
@@ -213,6 +231,12 @@ public class PhysicsChain {
                     }
                 }
 
+                // ★ 1.3.0: кошачий заворот — в позе сидя/сна мягко тянем частицы к спирали вокруг ног:
+                if (sitTargets != null && i > 0) {
+                    Vec3 curlTarget = sitTargets[Math.min(i, sitTargets.length - 1)];
+                    p.position = lerp(p.position, curlTarget, sitBlend * 0.20D);
+                }
+
                 p.position = collideOwnerCylinder(owner, p.position, p.radius, i);
 
                 PhysicsWorldCollider.CollisionResult result = collider.collideSphere(level, owner, p.position, p.radius);
@@ -229,18 +253,20 @@ public class PhysicsChain {
 
     /**
      * Режимная «присадка» дистальной части к земле:
-     *  - Классика: как в 1.0.0 — сильное притяжение (0.95) в пределах 45 см над землёй;
-     *  - Баланс:   мягкое (0.45) и только для дальней половины хвоста в пределах 28 см;
-     *  - Поднятая: отключено (хвост не должен «прилипать» к земле).
+     *  - Классика:     как в 1.0.0 — сильное притяжение (0.95) в пределах 45 см над землёй;
+     *  - Реалистичная: мягкая (0.60) для дальней 2/3 хвоста в пределах 35 см — кончик
+     *                  спокойно ложится на землю, как у отдыхающего кота (кроме позы обвива);
+     *  - Поднятая:     отключено (хвост не должен «прилипать» к земле).
      */
     private void settleDistalNearGround(Level level, Entity owner) {
         if (physicsMode == MODE_LIFTED) return;
+        if (sitBlend > 0.4D) return; // в обвиве вокруг ног землю обрабатывает сама спираль
         if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
 
-        boolean balanced = (physicsMode == MODE_BALANCED);
-        double maxGap = balanced ? 0.28D : 0.45D;
-        double pull = balanced ? 0.45D : 0.95D;
-        int from = balanced ? particles.size() / 2 : 1;
+        boolean realistic = (physicsMode == MODE_REALISTIC);
+        double maxGap = realistic ? 0.35D : 0.45D;
+        double pull = realistic ? 0.60D : 0.95D;
+        int from = realistic ? particles.size() / 3 : 1;
 
         for (int i = from; i < particles.size(); i++) {
             PhysicsParticle p = particles.get(i);
@@ -261,9 +287,12 @@ public class PhysicsChain {
     }
 
     /**
-     * Анатомическое направление покоя для сустава `index` (режимы Баланс/Поднятая):
-     * первый сегмент выходит из поясницы горизонтально, середина мягко приподнята,
-     * кончик слегка опускается. Классика использует направление как есть (с наклоном вниз).
+     * Анатомическое направление покоя для сустава `index` (режимы Реалистичная/Поднятая):
+     *  - Поднятая:     первый сегмент выходит из поясницы горизонтально, середина приподнята,
+     *                  кончик слегка опускается;
+     *  - Реалистичная: кошачий S-профиль — у поясницы чуть вниз, середина свободно провисает
+     *                  под весом меха, кончик мягко подкурчивается вверх (как у лисы).
+     *                  Классика использует направление как есть (с наклоном вниз).
      */
     private Vec3 restDirection(Vec3 horizontalBack, int index, int count) {
         if (physicsMode == MODE_CLASSIC) return horizontalBack;
@@ -272,16 +301,69 @@ public class PhysicsChain {
         back = back.normalize();
         if (index <= 0 || count <= 1) return back;
 
+        double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
+
+        if (physicsMode == MODE_REALISTIC) {
+            // ★ 1.3.0: естественный провисающий профиль + подкурченный кончик:
+            double sag = 0.20D + 0.34D * Math.sin(Math.PI * Math.min(1.0D, t / 0.85D));
+            double tipCurl = 0.38D * smoothstep(0.58D, 1.0D, t);
+            double angle = tipCurl - sag;
+            return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
+        }
+
         boolean lifted = (physicsMode == MODE_LIFTED);
         double lift = lifted ? 0.34D : 0.20D;
         double drop = lifted ? 0.18D : 0.10D;
         double tipStart = lifted ? 0.72D : 0.78D;
 
-        double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
         double liftAngle = lift * Math.sin(Math.PI * t);
         double tipDrop = drop * smoothstep(tipStart, 1.0D, t);
         double angle = liftAngle - tipDrop;
         return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
+    }
+
+    /**
+     * ★ 1.3.0: Кошачий заворот — целевые точки спирали вокруг ног сидящего игрока.
+     * Хвост выходит из-за спины, огибает ногу сбоку и закручивается кольцом
+     * спереди (у спящего — плотнее и ближе к телу, как у свернувшегося кота).
+     */
+    private Vec3[] computeSitCurlTargets(Level level, Entity owner, Vec3 baseDir, Vec3 root) {
+        int n = particles.size();
+        Vec3 back = new Vec3(baseDir.x, 0.0D, baseDir.z);
+        if (back.lengthSqr() < 1.0E-8D) back = new Vec3(0.0D, 0.0D, -1.0D);
+        back = back.normalize();
+        Vec3 forward = new Vec3(-back.x, 0.0D, -back.z);
+        Vec3 right = new Vec3(-back.z, 0.0D, back.x);
+
+        boolean sleeping = owner.isSleeping();
+        double ahead = sleeping ? 0.04D : 0.17D;
+        double side = sleeping ? 0.05D : 0.10D;
+        double baseR = sleeping ? 0.33D : 0.46D;
+
+        Vec3 center = new Vec3(owner.getX() + forward.x * ahead + right.x * side, 0.0D,
+                owner.getZ() + forward.z * ahead + right.z * side);
+
+        double groundY = owner.getY();
+        if (level != null) {
+            double g = collider.findGroundTopBelow(level, new Vec3(center.x, owner.getY() + 0.5D, center.z), 0.30D, 2.0D);
+            if (!Double.isNaN(g)) groundY = g;
+        }
+
+        // Стартовый угол — направление от центра спирали к корню хвоста:
+        Vec3 toRoot = root.subtract(center.x, groundY, center.z);
+        double theta0 = Math.atan2(toRoot.dot(forward), toRoot.dot(right));
+
+        Vec3[] targets = new Vec3[n];
+        for (int i = 0; i < n; i++) {
+            double t = (n <= 1) ? 1.0D : i / (double) (n - 1);
+            double theta = theta0 - 4.6D * t; // спираль ~265° вокруг ног
+            double r = baseR * (1.0D - 0.52D * t) + 0.02D; // кольцо сужается к кончику
+            double px = center.x + (right.x * Math.cos(theta) + forward.x * Math.sin(theta)) * r;
+            double pz = center.z + (right.z * Math.cos(theta) + forward.z * Math.sin(theta)) * r;
+            double py = groundY + Math.max(0.075D, particles.get(i).radius * 0.85D);
+            targets[i] = new Vec3(px, py, pz);
+        }
+        return targets;
     }
 
     private double smoothstep(double edge0, double edge1, double x) {

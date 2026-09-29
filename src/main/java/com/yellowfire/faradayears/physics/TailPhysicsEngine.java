@@ -7,6 +7,7 @@ import com.yellowfire.faradayears.physics.core.PhysicsChain;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -15,6 +16,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,6 +89,9 @@ public class TailPhysicsEngine {
         public boolean initialized = false;
         public int activeSegments = 12;
         public int activeTails = 1;
+        // ★ 1.3.0: поза сидя/сна — хвост обвивается вокруг ног (реалистичный режим):
+        public boolean sitting = false;
+        public double sitBlend = 0.0D;
 
         public PlayerPhysicsData() {
             for (int i = 0; i < MAX_TAILS; i++) {
@@ -104,6 +109,11 @@ public class TailPhysicsEngine {
 
     public synchronized PlayerPhysicsData getOrData(AbstractClientPlayer player) {
         return playerData.computeIfAbsent(player.getUUID(), k -> new PlayerPhysicsData());
+    }
+
+    /** ★ 1.3.0: анти-утечка памяти — удаляет физические данные игроков, покинувших мир клиента. */
+    public synchronized void pruneMissing(Set<UUID> presentPlayers) {
+        playerData.keySet().retainAll(presentPlayers);
     }
 
     public synchronized void onClientTick(AbstractClientPlayer player) {
@@ -140,6 +150,13 @@ public class TailPhysicsEngine {
 
         PlayerEarsTailData data = ModAttachments.get(player);
         {
+            // ★ 1.3.0: детект позы сидя/сна (стулья из мебели, спальники, /sit — ставят Pose.SITTING).
+            // Плавный бленд, чтобы хвост «закручивался» и «раскручивался» мягко, а не телепортом:
+            state.sitting = player.isSleeping() || player.getPose() == Pose.SITTING;
+            state.sitBlend += ((state.sitting ? 1.0D : 0.0D) - state.sitBlend) * 0.10D;
+            if (state.sitBlend < 0.005D) state.sitBlend = 0.0D;
+            if (state.sitBlend > 0.995D) state.sitBlend = 1.0D;
+
             Vec3 playerPos = player.position();
             Vec3 root = applyTailOffset(computeTailRoot(player, data), player, data.getTailOffsetX(), data.getTailOffsetY(), data.getTailOffsetZ());
             Vec3 rootVelocity = root.subtract(state.prevRoot);
@@ -163,10 +180,10 @@ public class TailPhysicsEngine {
             int activeTails = superVolumetric ? 1 : Math.max(1, Math.min(MAX_TAILS, tailCount));
             state.activeTails = activeTails;
 
-            // ★ 1.2.0: режим физики хвоста (0=Классика, 1=Баланс, 2=Поднятая дуга):
+            // ★ 1.2.0/1.3.0: режим физики хвоста (0=Классика, 1=Реалистичная кошачья, 2=Поднятая дуга):
             int physicsMode = Mth.clamp(data.getTailPhysicsMode(), PhysicsChain.MODE_CLASSIC, PhysicsChain.MODE_LIFTED);
             double backPitch = physicsMode == PhysicsChain.MODE_LIFTED ? 0.0D
-                    : (physicsMode == PhysicsChain.MODE_BALANCED ? -0.35D : -0.75D);
+                    : (physicsMode == PhysicsChain.MODE_REALISTIC ? -0.55D : -0.75D);
             Vec3 centerDir = computeBackDirection(player, backPitch);
 
             if (!state.initialized || teleported) {
@@ -209,8 +226,10 @@ public class TailPhysicsEngine {
                 if (data.isAnimate()) {
                     Vec3 gravity = new Vec3(0, player.isFallFlying() ? -0.050D : (player.onGround() ? -0.070D : -0.060D), 0);
                     double baseStiffness = player.onGround() ? 0.45D : 0.36D;
+                    // ★ 1.3.0: обвивание вокруг ног — только в реалистичном режиме:
+                    double sitAmount = (physicsMode == PhysicsChain.MODE_REALISTIC) ? state.sitBlend : 0.0D;
                     inst.chain.simulateTailRope(player.level(), player, root, rootVelocity, gravity, baseDir, baseStiffness,
-                            data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t);
+                            data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t, sitAmount);
                 } else {
                     inst.chain.reset(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
                 }
