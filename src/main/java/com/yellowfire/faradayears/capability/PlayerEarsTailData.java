@@ -60,6 +60,11 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
     private float tailWagSpeed = 1.5f;
     private String customTextureBase64 = "";
 
+    // ★ 1.2.0: 0 = Классика (1.0.0, стелется по земле), 1 = Баланс (средний), 2 = Поднятая дуга (1.0.1):
+    private int tailPhysicsMode = 0;
+    // ★ 1.2.0: применять ли кастомную текстуру 64x64 (единый лист ушек+хвоста):
+    private boolean customTextureEnabled = false;
+
     // ★ РАЗДЕЛ ГЕНДЕРА, ФИГУРЫ И ДЕКОРАТИВНОГО МЕШОЧКА:
     private int gender = 0;
     private boolean showChest = true;
@@ -399,6 +404,8 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         if (customTextureBase64 != null && !customTextureBase64.isEmpty()) {
             nbt.putString("CustomTextureBase64", customTextureBase64);
         }
+        nbt.putInt("TailPhysicsMode", tailPhysicsMode);
+        nbt.putBoolean("CustomTextureEnabled", customTextureEnabled);
         nbt.putInt("Gender", gender);
         nbt.putBoolean("ShowChest", showChest);
         nbt.putBoolean("ShowHips", showHips);
@@ -430,9 +437,6 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
     public void loadNBTData(CompoundTag nbt) {
         if (nbt.contains("ShowTail")) showTail = nbt.getBoolean("ShowTail");
         if (nbt.contains("ShowEars")) showEars = nbt.getBoolean("ShowEars");
-        if (nbt.contains("EarShape")) earShape = nbt.getInt("EarShape");
-        if (nbt.contains("TailCount")) tailCount = nbt.getInt("TailCount");
-        if (nbt.contains("TailFanSpread")) nbt.contains("ShowEars")) showEars = nbt.getBoolean("ShowEars");
         if (nbt.contains("EarShape")) earShape = nbt.getInt("EarShape");
         if (nbt.contains("TailCount")) tailCount = nbt.getInt("TailCount");
         if (nbt.contains("TailFanSpread")) tailFanSpread = nbt.getFloat("TailFanSpread");
@@ -570,6 +574,10 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
     public void setTailWagAmplitude(float a) { this.tailWagAmplitude = a; }
     public float getTailWagSpeed() { return tailWagSpeed; }
     public void setTailWagSpeed(float s) { this.tailWagSpeed = s; }
+    public int getTailPhysicsMode() { return tailPhysicsMode; }
+    public void setTailPhysicsMode(int m) { this.tailPhysicsMode = Math.max(0, Math.min(2, m)); }
+    public boolean isCustomTextureEnabled() { return customTextureEnabled; }
+    public void setCustomTextureEnabled(boolean b) { this.customTextureEnabled = b; }
     public String getCustomTextureBase64() { return customTextureBase64; }
     public void setCustomTextureBase64(String s) { this.customTextureBase64 = s; }
 
