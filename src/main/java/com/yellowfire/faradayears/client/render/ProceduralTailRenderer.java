@@ -70,6 +70,10 @@ public class ProceduralTailRenderer {
         boolean superVolumetric = (data.getTailCount() == 10);
         int activeTails = superVolumetric ? 4 : Math.max(1, Math.min(TailPhysicsEngine.MAX_TAILS, data.getTailCount()));
 
+        // ★ 1.3.2: испуг — «шерсть дыбом»: хвост временно распушается (пилоэрекция у кошек,
+        // режим «Реалистичная»): радиус трубки ×1.3 на пике испуга:
+        double puffScale = 1.0D + (data.getTailPhysicsMode() == 1 ? 0.30D * physics.scareBlend : 0.0D);
+
         // ★ 1.3.0 ОПТИМИЗАЦИЯ (LOD): чем дальше игрок от камеры, тем грубее трубка хвоста —
         // вблизи 12 сторон × 4 среза, вдали 8×3 и 6×2. Экономит и вершины, и мусор для GC:
         double camDistSq = player.distanceToSqr(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
@@ -84,25 +88,25 @@ public class ProceduralTailRenderer {
 
         if (superVolumetric) {
             renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                    0.0D, Vec3.ZERO, 1.28D, true, right, spineBaseDir, customTex, sides, subdivisions);
+                    0.0D, Vec3.ZERO, 1.28D * puffScale, true, right, spineBaseDir, customTex, sides, subdivisions);
             // ★ 1.3.0: 4 дополнительных объёмных слоя рендерим только вблизи (дальше их не видно):
             if (IS_IN_GUI_PREVIEW || camDistSq < 48.0D * 48.0D) {
                 for (int t = 0; t < 4; t++) {
                     double fanAngleRad = getFanAngleRad(t, 4, data.getTailFanSpread(), true);
                     Vec3 layerOffset = getLayerOffset(t, right, true);
                     renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                            fanAngleRad, layerOffset, 0.72D, false, right, spineBaseDir, customTex, sides, subdivisions);
+                            fanAngleRad, layerOffset, 0.72D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
                 }
             }
         } else if (activeTails == 1) {
             renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                    0.0D, Vec3.ZERO, 1.0D, false, right, spineBaseDir, customTex, sides, subdivisions);
+                    0.0D, Vec3.ZERO, 1.0D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
         } else {
             for (int t = 0; t < activeTails; t++) {
                 TailPhysicsEngine.TailChainInstance inst = physics.tails[t];
                 if (inst.smoothPoints[0] == null) continue;
                 renderContinuousSplineLayer(poseStack, consumer, packedLight, inst, physics.smoothRoot, data, activeSegments,
-                        0.0D, Vec3.ZERO, 1.0D, false, right, spineBaseDir, customTex, sides, subdivisions);
+                        0.0D, Vec3.ZERO, 1.0D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
             }
         }
 

@@ -17,10 +17,12 @@ import java.util.List;
  * ★ 1.2.0 — ТРИ РЕЖИМА ФИЗИКИ ХВОСТА (переключаются в GUI, синхронизируются по сети):
  *  - {@link #MODE_CLASSIC}   «Классика»     — поведение 1.0.0: мягкая верёвка, стелется по земле
  *                                              (градиент гравитации к кончику + settleDistalNearGround).
- *  - {@link #MODE_REALISTIC} «Реалистичная»  — ★ 1.3.0: кошачий/лисий хвост. Естественный S-профиль
- *                                              (висит с подкурчиком кончика), лёгкое «дыхание» в покое,
- *                                              а когда игрок СИДИТ или СПИТ — хвост сам обвивается
- *                                              вокруг ног спиралью, как у настоящего кота.
+ *  - {@link #MODE_REALISTIC} «Реалистичная»  — ★ 1.3.2: кошачий/лисий хвост с КОНТЕКСТНЫМ несением:
+ *                                              в покое свисает вниз до земли, на рыси опущен и вытянут,
+ *                                              в спринте — прямой вымпел-противовес, на охоте прижат
+ *                                              к земле, в прыжке — стабилизатор; при повороте хлещет
+ *                                              против поворота (руль гепарда), при уроне — распушается
+ *                                              и хлещет; сидя/лёжа — обвивается вокруг ног.
  *  - {@link #MODE_LIFTED}    «Поднятая»     — поведение 1.0.1 fox-tail-lift: горизонтальный выход
  *                                              из поясницы, приподнятая дуга, земля не притягивает.
  */
@@ -38,6 +40,30 @@ public class PhysicsChain {
 
     /** ★ 1.3.0: 0..1 — насколько хвост сейчас «обвит» вокруг ног (плавный вход/выход из позы сидя). */
     public double sitBlend = 0.0D;
+
+    // ★ 1.3.2 КОНТЕКСТНАЯ ПОЗА «КОШКА/ЛИСА»: несение хвоста зависит от того, что делает игрок.
+    // Значения сглаживаются в TailPhysicsEngine и присваиваются цепочке каждый тик.
+    /** Угол выноса от горизонтали (рад; отрицательный = вниз): стоя ~-60°, рысь ~-23°, спринт ~-5°. */
+    public double carryAngle = -1.05D;
+    /** Подкрутка кончика к пятке в покое (рад) — как у расслабленной кошки. */
+    public double tipCurl = 0.35D;
+    /** «Тонус» мышц 0..1: 0 = вяло висит под своей тяжестью, 1 = несётся прямо (спринт/прыжок). */
+    public double tension = 0.30D;
+    /** 0..1 — движется ли игрок (для походочного покачивания в такт шагам). */
+    public double moveBlend = 0.0D;
+    /** 0..1 — крадётся (хвост прижат к земле, как кошка на охоте). */
+    public double sneakBlend = 0.0D;
+    /** Фаза шага (рад) — набирается пройденной дистанцией, а не временем: в покое хвост не качается. */
+    public double gaitPhase = 0.0D;
+    /** Сдвиг фазы для веера хвостов — чтобы хвосты качались вразнобой, а не строем. */
+    public double swayPhase = 0.0D;
+    /** «Руль» (ограниченный): инерционный удар хвостом ПРОТИВ поворота — как хвост гепарда. */
+    public double turnLash = 0.0D;
+    /** 0..1 — испуг (урон): хвост распушается и хлещет из стороны в сторону. */
+    public double scareBlend = 0.0D;
+    /** Таймеры редких «нервных тиков» кончика в покое (кошка чем-то заинтересована). */
+    public int flickCooldown = 80;
+    public int flickTick = 0;
 
     private final PhysicsWorldCollider collider = new PhysicsWorldCollider();
 
@@ -83,6 +109,16 @@ public class PhysicsChain {
         if (particles.isEmpty()) return;
         this.sitBlend = Math.max(0.0D, Math.min(1.0D, sitBlendIn));
 
+        // ★ 1.3.2: автоколебания кончика — редкие короткие «тики» в покое (не в обвиве/движении):
+        if (physicsMode == MODE_REALISTIC && sitBlend < 0.5D) {
+            if (flickTick > 0) {
+                flickTick--;
+                if (flickTick == 0) flickCooldown = 70 + (int) (Math.random() * 140.0D);
+            } else if (--flickCooldown <= 0 && moveBlend < 0.30D && scareBlend < 0.30D) {
+                flickTick = 12;
+            }
+        }
+
         if (rootVelocity.lengthSqr() > 9.0D) {
             reset(root, baseDirection, particles.size(), segmentLength, particles.get(0).radius);
             return;
@@ -110,24 +146,46 @@ public class PhysicsChain {
             p.touchingGround = false;
             double distal = (particles.size() <= 1) ? 1.0D : i / (double) (particles.size() - 1);
             Vec3 lateralWag = Vec3.ZERO;
-            if (wagAxis != 3 && wagAmp > 0.05f && i > 0) {
+            boolean wagActive = (wagAxis != 3 && wagAmp > 0.05f && i > 0);
+            if (wagActive) {
                 double segTime = time - distal * 1.5D; // Бегущая волна виляния по длине хвоста
                 double wagForce = Math.sin(segTime) * (wagAmp * 0.0075D);
                 double wagForce2 = Math.cos(segTime * 0.8D) * (wagAmp * 0.006D);
                 if (wagAxis == 0) lateralWag = sideVector.scale(wagForce * distal);
                 else if (wagAxis == 1) lateralWag = upVector.scale(wagForce * distal);
                 else if (wagAxis == 2) lateralWag = sideVector.scale(wagForce * distal).add(upVector.scale(wagForce2 * distal));
-            } else if (physicsMode == MODE_REALISTIC && i > 0) {
-                // ★ 1.3.0: «дыхание» живого хвоста — едва заметное покачивание в покое (не в обвиве):
-                double idlePhase = (owner != null ? owner.tickCount : 0.0D) * 0.09D;
-                double idleForce = Math.sin(idlePhase - distal * 2.4D) * 0.0012D * (1.0D - sitBlend);
-                lateralWag = sideVector.scale(idleForce * distal);
+            }
+            // ★ 1.3.2 ЖИВАЯ МИМИКА ХВОСТА (реалистичный режим) — по наблюдениям за настоящими
+            // кошками и лисами: ленивое покачивание в покое, редкий «нервный тик» кончика,
+            // покачивание в такт шагам, инерционный хлыст ПРОТИВ поворота (руль гепарда),
+            // а при испуге — быстрый хлёст из стороны в сторону.
+            if (physicsMode == MODE_REALISTIC && i > 0) {
+                double tick = (owner != null ? owner.tickCount : 0.0D);
+                double idleScale = (1.0D - sitBlend) * (1.0D - moveBlend) * (wagActive ? 0.35D : 1.0D);
+                double fx = 0.0D;
+                // 1) ленивое «дыхание» хвоста — медленная волна от основания к кончику:
+                fx += Math.sin(tick * 0.045D + swayPhase - distal * 2.2D) * 0.0028D * idleScale;
+                // 2) редкий «нервный тик» кончика (кошка чем-то заинтересована/раздражена):
+                if (flickTick > 0) {
+                    double flickEnv = Math.sin(flickTick * 0.85D) * (flickTick / 12.0D);
+                    fx += flickEnv * 0.012D * smoothstep(0.55D, 1.0D, distal) * idleScale;
+                }
+                // 3) походочное покачивание в такт шагам (фаза набирается дистанцией, не временем):
+                fx += Math.sin(gaitPhase + swayPhase - distal * 1.8D) * 0.0032D * moveBlend * (0.35D + 0.65D * tension);
+                // 4) «руль»: при повороте хвост инерционно хлещет ПРОТИВ поворота — как у гепарда:
+                fx += turnLash;
+                // 5) испуг: быстрый хлёст из стороны в сторону (кошка/лиса при страхе):
+                if (scareBlend > 0.01D) {
+                    fx += Math.sin(tick * 0.75D + distal * 1.5D) * 0.016D * scareBlend;
+                }
+                lateralWag = lateralWag.add(sideVector.scale(fx * distal));
             }
             double gScale;
             if (physicsMode == MODE_CLASSIC) {
                 gScale = (i == 0) ? 0.08D : (1.0D + distal * 0.35D);
             } else if (physicsMode == MODE_REALISTIC) {
-                gScale = (i == 0) ? 0.30D : (0.88D + distal * 0.22D);
+                // ★ 1.3.2: в спринте/прыжке мышцы активно несут хвост — гравитация ослаблена:
+                gScale = (i == 0) ? 0.30D : (0.88D + distal * 0.22D) * (1.0D - 0.55D * tension);
             } else {
                 gScale = 1.0D;
             }
@@ -195,23 +253,24 @@ public class PhysicsChain {
                         p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
                     }
                 } else if (physicsMode == MODE_REALISTIC) {
-                    // ★ РЕАЛИСТИЧНАЯ (кошачья): основание держит хвост у поясницы,
-                    //   середина мягко провисает под своей тяжестью, кончик свободен —
-                    //   форму держит S-профиль из restDirection, а не жёсткая дуга.
+                    // ★ 1.3.2 РЕАЛИСТИЧНАЯ (кошачья/лисяя): форму задаёт контекстная поза
+                    //   (carryAngle/tipCurl в restDirection), а «тонус» (tension) решает,
+                    //   насколько мышцы держат эту позу: в покое хвост вяло висит под своей
+                    //   тяжестью, в спринте — несётся прямым вымпелом позади игрока.
                     if (i == 0) {
-                        double k0 = baseStiffness * (0.42D + 0.38D * groundFade);
+                        double k0 = baseStiffness * (0.22D + 0.60D * tension) * (0.45D + 0.55D * groundFade);
                         p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
                     } else if (i < 6) {
                         Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double kSpan = (0.30D - i * 0.045D) * baseStiffness;
+                        double kSpan = (0.30D - i * 0.045D) * baseStiffness * (0.55D + 0.75D * tension);
                         double effectiveK = kSpan * (0.25D + 0.75D * groundFade);
                         p.position = lerp(projected, arcTarget, effectiveK);
                     } else {
                         Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double restWeight = baseStiffness * Mth.lerp(distal, 0.20D, 0.10D);
+                        double restWeight = baseStiffness * Mth.lerp(distal, 0.20D, 0.10D) * (0.45D + 1.10D * tension);
                         restWeight *= 1.0D + 0.10D * (1.0D - groundFade);
                         if (crouching) restWeight *= 0.90D;
-                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.03D, 0.14D));
+                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.02D, 0.30D));
                     }
                 } else {
                     // ★ КЛАССИКА (1.0.0): слабое основание, микро-суставы у корня,
@@ -264,8 +323,15 @@ public class PhysicsChain {
         if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
 
         boolean realistic = (physicsMode == MODE_REALISTIC);
-        double maxGap = realistic ? 0.35D : 0.45D;
-        double pull = realistic ? 0.60D : 0.95D;
+        double maxGap = realistic ? 0.35D * (1.0D - 0.45D * moveBlend) : 0.45D;
+        double pull;
+        if (realistic) {
+            // ★ 1.3.2: в покое кончик спокойно лежит на земле (отдыхающая кошка/лиса);
+            //   на рыси — лишь изредка касается; на охоте (крадучись) — прижат к земле:
+            pull = sneakBlend > 0.5D ? 0.85D : 0.62D * (1.0D - 0.70D * moveBlend);
+        } else {
+            pull = 0.95D;
+        }
         int from = realistic ? particles.size() / 3 : 1;
 
         for (int i = from; i < particles.size(); i++) {
@@ -304,10 +370,11 @@ public class PhysicsChain {
         double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
 
         if (physicsMode == MODE_REALISTIC) {
-            // ★ 1.3.0: естественный провисающий профиль + подкурченный кончик:
-            double sag = 0.20D + 0.34D * Math.sin(Math.PI * Math.min(1.0D, t / 0.85D));
-            double tipCurl = 0.38D * smoothstep(0.58D, 1.0D, t);
-            double angle = tipCurl - sag;
+            // ★ 1.3.2: контекстное несение хвоста (цели ставит TailPhysicsEngine по состоянию игрока):
+            //   в покое хвост СВИСАЕТ ВНИЗ — как у стоящей лисы («достаёт до земли»);
+            //   на рыси — опущен и вытянут назад; в спринте — почти горизонтальный вымпел-противовес;
+            //   на охоте (крадучись) — прижат к земле; кончик в покое мягко подкручен к пятке.
+            double angle = carryAngle + tipCurl * smoothstep(0.55D, 1.0D, t);
             return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
         }
 
@@ -336,9 +403,11 @@ public class PhysicsChain {
         Vec3 right = new Vec3(-back.z, 0.0D, back.x);
 
         boolean sleeping = owner.getPose() == net.minecraft.world.entity.Pose.SLEEPING;
-        double ahead = sleeping ? 0.04D : 0.17D;
+        // ★ 1.3.2: настоящие кошки в позе «хлебушка» кладут хвост ПЕРЕД лапами, а кончик —
+        //   поверх основания обвива (лёгкое перекрытие), а не сужающейся спиралью-раструбом:
+        double ahead = sleeping ? 0.04D : 0.21D;
         double side = sleeping ? 0.05D : 0.10D;
-        double baseR = sleeping ? 0.33D : 0.46D;
+        double baseR = sleeping ? 0.33D : 0.44D;
 
         Vec3 center = new Vec3(owner.getX() + forward.x * ahead + right.x * side, 0.0D,
                 owner.getZ() + forward.z * ahead + right.z * side);
@@ -356,11 +425,15 @@ public class PhysicsChain {
         Vec3[] targets = new Vec3[n];
         for (int i = 0; i < n; i++) {
             double t = (n <= 1) ? 1.0D : i / (double) (n - 1);
-            double theta = theta0 - 4.6D * t; // спираль ~265° вокруг ног
-            double r = baseR * (1.0D - 0.52D * t) + 0.02D; // кольцо сужается к кончику
+            double sweep = sleeping ? 4.6D : 4.0D; // ~230°: обвив, а не раструб
+            double theta = theta0 - sweep * t;
+            double r = baseR * (1.0D - 0.35D * t) + 0.03D; // кольцо почти не сужается к кончику
             double px = center.x + (right.x * Math.cos(theta) + forward.x * Math.sin(theta)) * r;
             double pz = center.z + (right.z * Math.cos(theta) + forward.z * Math.sin(theta)) * r;
-            double py = groundY + Math.max(0.075D, particles.get(i).radius * 0.85D);
+            double py = groundY + Math.max(0.07D, particles.get(i).radius * 0.80D);
+            if (!sleeping && t > 0.70D) {
+                py += ((t - 0.70D) / 0.30D) * particles.get(i).radius * 0.55D; // кончик поверх обвива
+            }
             targets[i] = new Vec3(px, py, pz);
         }
         return targets;
