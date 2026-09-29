@@ -42,7 +42,7 @@ public class EarsTailCustomizationScreen extends Screen {
     private float previewOffsetY = 0.0f;          // Screen Y offset
 
     public EarsTailCustomizationScreen() {
-        super(Component.literal("Настройка ушек и хвоста Фарадея"));
+        super(Component.translatable("gui.faradayears.title"));
     }
 
     @Override
@@ -54,199 +54,223 @@ public class EarsTailCustomizationScreen extends Screen {
         int topPos = 42;
         int btnWidth = 195;
 
-        addRenderableWidget(Button.builder(Component.literal("★ Пресет"), b -> switchTab(0)).bounds(panelLeft - 18, 16, 42, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("🐱 Ушки"), b -> switchTab(1)).bounds(panelLeft + 26, 16, 38, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("🦊 Хвост"), b -> switchTab(2)).bounds(panelLeft + 66, 16, 42, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("👗 Фигура"), b -> switchTab(4)).bounds(panelLeft + 110, 16, 46, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("🎒 Мешочек"), b -> switchTab(5)).bounds(panelLeft + 158, 16, 50, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("🎨 Цвет"), b -> switchTab(3)).bounds(panelLeft + 210, 16, 40, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.presets"), b -> switchTab(0)).bounds(panelLeft - 18, 16, 42, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.ears"), b -> switchTab(1)).bounds(panelLeft + 26, 16, 38, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.tail"), b -> switchTab(2)).bounds(panelLeft + 66, 16, 42, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.body"), b -> switchTab(4)).bounds(panelLeft + 110, 16, 46, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.pouch"), b -> switchTab(5)).bounds(panelLeft + 158, 16, 50, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.texture"), b -> switchTab(3)).bounds(panelLeft + 210, 16, 40, 20).build());
 
         if (activeTab == 0) {
-            addRenderableWidget(Button.builder(Component.literal("★ Фарадей (Супер-объёмный!)"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.faraday"), b -> {
                 localData.applyFaradayPreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos, btnWidth, 22).build());
-            addRenderableWidget(Button.builder(Component.literal("🦊 Лисёнок / Котик"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.fox"), b -> {
                 localData.applyFoxPreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 26, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("🐺 Серый Волк"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.wolf"), b -> {
                 localData.applyWolfPreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 48, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("🐰 Кролик"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.bunny"), b -> {
                 localData.applyBunnyPreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 70, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("✨ Девятихвостая Кицунэ"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.kitsune"), b -> {
                 localData.applyKitsunePreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 92, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("🐱 Феликс"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.felix"), b -> {
                 localData.applyFelixPreset();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 114, btnWidth, 20).build());
         } else if (activeTab == 1) {
-            addRenderableWidget(Button.builder(Component.literal("✔ Ушки на голове: " + (localData.isShowEars() ? "ВКЛ" : "ВЫКЛ")), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.ears.show", onOff(localData.isShowEars())), b -> {
                 localData.setShowEars(!localData.isShowEars());
-                b.setMessage(Component.literal("✔ Ушки на голове: " + (localData.isShowEars() ? "ВКЛ" : "ВЫКЛ")));
+                b.setMessage(Component.translatable("gui.faradayears.ears.show", onOff(localData.isShowEars())));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos, btnWidth, 20).build());
 
-            addRenderableWidget(Button.builder(Component.literal("Форма ушек: " + getEarShapeName(localData.getEarShape())), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.ears.shape", Component.translatable(getEarShapeKey(localData.getEarShape()))), b -> {
                 localData.setEarShape((localData.getEarShape() + 1) % 4);
-                b.setMessage(Component.literal("Форма ушек: " + getEarShapeName(localData.getEarShape())));
+                b.setMessage(Component.translatable("gui.faradayears.ears.shape", Component.translatable(getEarShapeKey(localData.getEarShape()))));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 22, btnWidth, 20).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 46, btnWidth, 18, "Размах ушек вбок (Z): ", -45.0f, 45.0f, localData.getEarRotZ(), val -> { localData.setEarRotZ(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 66, btnWidth, 18, "Наклон ушек вперёд/назад (X): ", -45.0f, 45.0f, localData.getEarRotX(), val -> { localData.setEarRotX(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 86, btnWidth, 18, "Поворот ушек вокруг оси (Y): ", -45.0f, 45.0f, localData.getEarRotY(), val -> { localData.setEarRotY(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 46, btnWidth, 18, "slider.faradayears.ear_rot_z", -45.0f, 45.0f, localData.getEarRotZ(), val -> { localData.setEarRotZ(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 66, btnWidth, 18, "slider.faradayears.ear_rot_x", -45.0f, 45.0f, localData.getEarRotX(), val -> { localData.setEarRotX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 86, btnWidth, 18, "slider.faradayears.ear_rot_y", -45.0f, 45.0f, localData.getEarRotY(), val -> { localData.setEarRotY(val); applyLiveUpdate(); }));
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 108, btnWidth, 18, "Размер ушек X: ", 0.5f, 2.0f, localData.getEarScaleX(), val -> { localData.setEarScaleX(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 128, btnWidth, 18, "Размер ушек Y: ", 0.5f, 2.0f, localData.getEarScaleY(), val -> { localData.setEarScaleY(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 148, btnWidth, 18, "Размер ушек Z: ", 0.5f, 2.0f, localData.getEarScaleZ(), val -> { localData.setEarScaleZ(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 108, btnWidth, 18, "slider.faradayears.ear_scale_x", 0.5f, 2.0f, localData.getEarScaleX(), val -> { localData.setEarScaleX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 128, btnWidth, 18, "slider.faradayears.ear_scale_y", 0.5f, 2.0f, localData.getEarScaleY(), val -> { localData.setEarScaleY(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 148, btnWidth, 18, "slider.faradayears.ear_scale_z", 0.5f, 2.0f, localData.getEarScaleZ(), val -> { localData.setEarScaleZ(val); applyLiveUpdate(); }));
 
-            addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить только настройки ушек"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.ears.reset"), b -> {
                 localData.resetEarsOnly();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos + 170, btnWidth, 18).build());
         } else if (activeTab == 2) {
-            addRenderableWidget(Button.builder(Component.literal("✔ Хвост на спине: " + (localData.isShowTail() ? "ВКЛ" : "ВЫКЛ")), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.show", onOff(localData.isShowTail())), b -> {
                 localData.setShowTail(!localData.isShowTail());
-                b.setMessage(Component.literal("✔ Хвост на спине: " + (localData.isShowTail() ? "ВКЛ" : "ВЫКЛ")));
+                b.setMessage(Component.translatable("gui.faradayears.tail.show", onOff(localData.isShowTail())));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos, btnWidth, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Режим: " + getTailCountName(localData.getTailCount())), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.count", Component.translatable(getTailCountKey(localData.getTailCount()))), b -> {
                 int[] counts = {10, 1, 2, 3, 5, 7, 9};
                 int nextIdx = 0;
                 for (int i = 0; i < counts.length; i++) if (localData.getTailCount() == counts[i]) nextIdx = (i + 1) % counts.length;
                 localData.setTailCount(counts[nextIdx]);
-                b.setMessage(Component.literal("Режим: " + getTailCountName(localData.getTailCount())));
+                b.setMessage(Component.translatable("gui.faradayears.tail.count", Component.translatable(getTailCountKey(localData.getTailCount()))));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 40, btnWidth, 18, "Веерный развал хвостов Y: ", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
+            // ★ 1.2.0: переключатель режима физики хвоста (Классика / Баланс / Поднятая дуга):
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))), b -> {
+                localData.setTailPhysicsMode((localData.getTailPhysicsMode() + 1) % 3);
+                b.setMessage(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))));
+                applyLiveUpdate();
+            }).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
 
-            addRenderableWidget(Button.builder(Component.literal("Сегментов в длину: " + localData.getTailSegments() + " (" + getSegmentsDesc(localData.getTailSegments()) + ")"), b -> {
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 60, btnWidth, 18, "slider.faradayears.tail_fan_spread", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
+
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.segments", localData.getTailSegments(), Component.translatable(getSegmentsDescKey(localData.getTailSegments()))), b -> {
                 localData.setTailSegments(localData.getTailSegments() % 6 + 1);
-                b.setMessage(Component.literal("Сегментов в длину: " + localData.getTailSegments() + " (" + getSegmentsDesc(localData.getTailSegments()) + ")"));
+                b.setMessage(Component.translatable("gui.faradayears.tail.segments", localData.getTailSegments(), Component.translatable(getSegmentsDescKey(localData.getTailSegments()))));
                 applyLiveUpdate();
-            }).bounds(panelLeft, topPos + 60, btnWidth, 18).build());
+            }).bounds(panelLeft, topPos + 80, btnWidth, 18).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 80, btnWidth, 18, "Длина каждого сегмента Z: ", 3.0f, 10.0f, localData.getTailSegmentLength(), val -> { localData.setTailSegmentLength(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 100, btnWidth, 18, "Сужение к кончику: ", 0.35f, 1.45f, localData.getTailTaper(), val -> { localData.setTailTaper(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 120, btnWidth, 18, "Общая ширина X: ", 0.5f, 2.5f, localData.getTailScaleX(), val -> { localData.setTailScaleX(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 140, btnWidth, 18, "Подъём от поясницы (сдвиг Z/Y): ", -16.0f, 16.0f, localData.getTailRotX(), val -> { localData.setTailRotX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 100, btnWidth, 18, "slider.faradayears.tail_segment_length", 3.0f, 10.0f, localData.getTailSegmentLength(), val -> { localData.setTailSegmentLength(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 120, btnWidth, 18, "slider.faradayears.tail_taper", 0.35f, 1.45f, localData.getTailTaper(), val -> { localData.setTailTaper(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 140, btnWidth, 18, "slider.faradayears.tail_scale_x", 0.5f, 2.5f, localData.getTailScaleX(), val -> { localData.setTailScaleX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 160, btnWidth, 18, "slider.faradayears.tail_rot_x", -16.0f, 16.0f, localData.getTailRotX(), val -> { localData.setTailRotX(val); applyLiveUpdate(); }));
 
-            addRenderableWidget(Button.builder(Component.literal("Ось махания: " + getWagAxisName(localData.getTailWagAxis())), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.wag", Component.translatable(getWagAxisKey(localData.getTailWagAxis()))), b -> {
                 localData.setTailWagAxis((localData.getTailWagAxis() + 1) % 4);
-                b.setMessage(Component.literal("Ось махания: " + getWagAxisName(localData.getTailWagAxis())));
+                b.setMessage(Component.translatable("gui.faradayears.wag", Component.translatable(getWagAxisKey(localData.getTailWagAxis()))));
                 applyLiveUpdate();
-            }).bounds(panelLeft, topPos + 160, btnWidth, 18).build());
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 180, btnWidth, 18, "Амплитуда махания: ", 0.0f, 45.0f, localData.getTailWagAmplitude(), val -> { localData.setTailWagAmplitude(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 200, btnWidth, 18, "Скорость махания: ", 0.5f, 5.0f, localData.getTailWagSpeed(), val -> { localData.setTailWagSpeed(val); applyLiveUpdate(); }));
+            }).bounds(panelLeft, topPos + 180, btnWidth, 18).build());
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 200, btnWidth, 18, "slider.faradayears.wag_amplitude", 0.0f, 45.0f, localData.getTailWagAmplitude(), val -> { localData.setTailWagAmplitude(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 220, btnWidth, 18, "slider.faradayears.wag_speed", 0.5f, 5.0f, localData.getTailWagSpeed(), val -> { localData.setTailWagSpeed(val); applyLiveUpdate(); }));
 
-            addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить только настройки хвоста"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.reset"), b -> {
                 localData.resetTailOnly();
                 applyLiveUpdate();
                 init();
-            }).bounds(panelLeft, topPos + 222, btnWidth, 18).build());
+            }).bounds(panelLeft, topPos + 242, btnWidth, 18).build());
         } else if (activeTab == 3) {
-            addRenderableWidget(Button.builder(Component.literal("💾 Скачать понятный 2-полосный шаблон"), b -> exportCustom2StripTemplateToDisk(b)).bounds(panelLeft, topPos, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("📂 Загрузить faraday_custom.png из папки игры"), b -> loadCustomTextureFromDisk(b)).bounds(panelLeft, topPos + 22, btnWidth, 20).build());
+            // ★ 1.2.0: тумблер применения кастомной текстуры (единый лист 64x64):
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.toggle", onOff(localData.isCustomTextureEnabled())), b -> {
+                localData.setCustomTextureEnabled(!localData.isCustomTextureEnabled());
+                b.setMessage(Component.translatable("gui.faradayears.texture.toggle", onOff(localData.isCustomTextureEnabled())));
+                applyLiveUpdate();
+            }).bounds(panelLeft, topPos, btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.template"), b -> exportCustom2StripTemplateToDisk(b)).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.load"), b -> loadCustomTextureFromDisk(b)).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
 
-            canvasWidget = new TextureCanvasWidget(panelLeft, topPos + 46, 100, 100);
+            canvasWidget = new TextureCanvasWidget(panelLeft, topPos + 62, 150, 150);
+            canvasWidget.setOnPaintListener(() -> {
+                localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                localData.setCustomTextureEnabled(true); // рисуешь — значит, хочешь видеть текстуру
+                applyLiveUpdate();
+            });
             addRenderableWidget(canvasWidget);
 
-            addRenderableWidget(Button.builder(Component.literal("Тёмная шерсть"), b -> canvasWidget.setCurrentColor(0x262220)).bounds(panelLeft + 106, topPos + 46, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Оранжевый"), b -> canvasWidget.setCurrentColor(0xEE8C1E)).bounds(panelLeft + 106, topPos + 66, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Золотой"), b -> canvasWidget.setCurrentColor(0xF1C40F)).bounds(panelLeft + 106, topPos + 86, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Красно-коричн."), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 106, topPos + 106, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Белый кончик"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 106, topPos + 126, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.dark"), b -> canvasWidget.setCurrentColor(0x262220)).bounds(panelLeft + 156, topPos + 62, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.orange"), b -> canvasWidget.setCurrentColor(0xEE8C1E)).bounds(panelLeft + 156, topPos + 82, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.gold"), b -> canvasWidget.setCurrentColor(0xF1C40F)).bounds(panelLeft + 156, topPos + 102, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.red"), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 156, topPos + 122, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.white"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 156, topPos + 142, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tool.eraser"), b -> canvasWidget.setCurrentColorTransparent()).bounds(panelLeft + 156, topPos + 162, 88, 18).build());
+            // ★ 1.3.0: «поверхностный слой» — подписи зон поверх канваса (какая область за что отвечает):
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.zones", onOff(canvasWidget.isZoneOverlayVisible())), b -> {
+                canvasWidget.toggleZoneOverlay();
+                b.setMessage(Component.translatable("gui.faradayears.texture.zones", onOff(canvasWidget.isZoneOverlayVisible())));
+            }).bounds(panelLeft + 156, topPos + 182, 88, 18).build());
         } else if (activeTab == 4) {
-            addRenderableWidget(Button.builder(Component.literal("Гендер: " + getGenderName(localData.getGender())), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.gender", Component.translatable(getGenderKey(localData.getGender()))), b -> {
                 localData.setGender((localData.getGender() + 1) % 4);
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos, btnWidth, 20).build());
 
             if (localData.getGender() == 1 || localData.getGender() == 3) {
-                addRenderableWidget(Button.builder(Component.literal("Грудь: " + (localData.isShowChest() ? "ВКЛ" : "ВЫКЛ")), b -> {
+                addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.chest", onOff(localData.isShowChest())), b -> {
                     localData.setShowChest(!localData.isShowChest());
-                    b.setMessage(Component.literal("Грудь: " + (localData.isShowChest() ? "ВКЛ" : "ВЫКЛ")));
+                    b.setMessage(Component.translatable("gui.faradayears.body.chest", onOff(localData.isShowChest())));
                     applyLiveUpdate();
                 }).bounds(panelLeft, topPos + 22, btnWidth / 2 - 2, 18).build());
-                addRenderableWidget(Button.builder(Component.literal("Бёдра: " + (localData.isShowHips() ? "ВКЛ" : "ВЫКЛ")), b -> {
+                addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.hips", onOff(localData.isShowHips())), b -> {
                     localData.setShowHips(!localData.isShowHips());
-                    b.setMessage(Component.literal("Бёдра: " + (localData.isShowHips() ? "ВКЛ" : "ВЫКЛ")));
+                    b.setMessage(Component.translatable("gui.faradayears.body.hips", onOff(localData.isShowHips())));
                     applyLiveUpdate();
                 }).bounds(panelLeft + btnWidth / 2 + 2, topPos + 22, btnWidth / 2 - 2, 18).build());
 
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 44, btnWidth, 18, "Размер груди (выступ Z): ", 0.5f, 2.0f, localData.getChestScaleZ(), val -> { localData.setChestScaleZ(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 64, btnWidth, 18, "Ширина груди X: ", 0.5f, 2.0f, localData.getChestScaleX(), val -> { localData.setChestScaleX(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 84, btnWidth, 18, "Высота груди Y: ", -4.0f, 4.0f, localData.getChestOffsetY(), val -> { localData.setChestOffsetY(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 44, btnWidth, 18, "slider.faradayears.chest_scale_z", 0.5f, 2.0f, localData.getChestScaleZ(), val -> { localData.setChestScaleZ(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 64, btnWidth, 18, "slider.faradayears.chest_scale_x", 0.5f, 2.0f, localData.getChestScaleX(), val -> { localData.setChestScaleX(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 84, btnWidth, 18, "slider.faradayears.chest_offset_y", -4.0f, 4.0f, localData.getChestOffsetY(), val -> { localData.setChestOffsetY(val); applyLiveUpdate(); }));
 
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 104, btnWidth, 18, "Размер бёдер (выступ Z): ", 0.5f, 2.0f, localData.getHipsScaleZ(), val -> { localData.setHipsScaleZ(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 124, btnWidth, 18, "Ширина бёдер X: ", 0.5f, 2.0f, localData.getHipsScaleX(), val -> { localData.setHipsScaleX(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 144, btnWidth, 18, "Сила физики (мягкость Jiggle): ", 0.0f, 2.0f, localData.getBodyJiggleStrength(), val -> { localData.setBodyJiggleStrength(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 104, btnWidth, 18, "slider.faradayears.hips_scale_z", 0.5f, 2.0f, localData.getHipsScaleZ(), val -> { localData.setHipsScaleZ(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 124, btnWidth, 18, "slider.faradayears.hips_scale_x", 0.5f, 2.0f, localData.getHipsScaleX(), val -> { localData.setHipsScaleX(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 144, btnWidth, 18, "slider.faradayears.jiggle", 0.0f, 2.0f, localData.getBodyJiggleStrength(), val -> { localData.setBodyJiggleStrength(val); applyLiveUpdate(); }));
             }
 
             if (localData.getGender() == 2 || localData.getGender() == 3) {
                 int startY = (localData.getGender() == 3) ? topPos + 164 : topPos + 22;
-                addRenderableWidget(Button.builder(Component.literal("✔ Атлетический торс/плечи: " + (localData.isShowShoulders() ? "ВКЛ" : "ВЫКЛ")), b -> {
+                addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.shoulders", onOff(localData.isShowShoulders())), b -> {
                     localData.setShowShoulders(!localData.isShowShoulders());
-                    b.setMessage(Component.literal("✔ Атлетический торс/плечи: " + (localData.isShowShoulders() ? "ВКЛ" : "ВЫКЛ")));
+                    b.setMessage(Component.translatable("gui.faradayears.body.shoulders", onOff(localData.isShowShoulders())));
                     applyLiveUpdate();
                 }).bounds(panelLeft, startY, btnWidth, 18).build());
-                addRenderableWidget(new CustomSlider(panelLeft, startY + 20, btnWidth, 18, "Ширина плеч/торса X: ", 0.8f, 1.8f, localData.getShouldersScaleX(), val -> { localData.setShouldersScaleX(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, startY + 40, btnWidth, 18, "Глубина торса Z: ", 0.8f, 1.8f, localData.getShouldersScaleZ(), val -> { localData.setShouldersScaleZ(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, startY + 20, btnWidth, 18, "slider.faradayears.shoulders_scale_x", 0.8f, 1.8f, localData.getShouldersScaleX(), val -> { localData.setShouldersScaleX(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, startY + 40, btnWidth, 18, "slider.faradayears.shoulders_scale_z", 0.8f, 1.8f, localData.getShouldersScaleZ(), val -> { localData.setShouldersScaleZ(val); applyLiveUpdate(); }));
             }
 
             int jumpY = (localData.getGender() == 3) ? topPos + 226 : (localData.getGender() == 2 ? topPos + 84 : (localData.getGender() == 1 ? topPos + 166 : topPos + 24));
-            addRenderableWidget(Button.builder(Component.literal("🎒 Перейти к настройке поясного мешочка ➡"), b -> switchTab(5)).bounds(panelLeft, jumpY, btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.goto_pouch"), b -> switchTab(5)).bounds(panelLeft, jumpY, btnWidth, 18).build());
 
             int resetY = jumpY + 22;
-            addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить настройки фигуры"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.reset"), b -> {
                 localData.resetBodyOnly();
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, resetY, btnWidth, 18).build());
         } else if (activeTab == 5) {
-            addRenderableWidget(Button.builder(Component.literal("✔ Поясной мешочек спереди: " + (localData.isShowPouch() ? "ВКЛ" : "ВЫКЛ")), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.show", onOff(localData.isShowPouch())), b -> {
                 localData.setShowPouch(!localData.isShowPouch());
-                b.setMessage(Component.literal("✔ Поясной мешочек спереди: " + (localData.isShowPouch() ? "ВКЛ" : "ВЫКЛ")));
+                b.setMessage(Component.translatable("gui.faradayears.pouch.show", onOff(localData.isShowPouch())));
                 applyLiveUpdate();
                 init();
             }).bounds(panelLeft, topPos, btnWidth, 20).build());
 
             if (localData.isShowPouch()) {
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 24, btnWidth, 18, "Сдвиг мешочка X (влево/вправо): ", -5.0f, 5.0f, localData.getPouchOffsetX(), val -> { localData.setPouchOffsetX(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 44, btnWidth, 18, "Сдвиг мешочка Y (вверх/вниз): ", -6.0f, 6.0f, localData.getPouchOffsetY(), val -> { localData.setPouchOffsetY(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 64, btnWidth, 18, "Сдвиг мешочка Z (вперёд/назад): ", -4.0f, 4.0f, localData.getPouchOffsetZ(), val -> { localData.setPouchOffsetZ(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 24, btnWidth, 18, "slider.faradayears.pouch_offset_x", -5.0f, 5.0f, localData.getPouchOffsetX(), val -> { localData.setPouchOffsetX(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 44, btnWidth, 18, "slider.faradayears.pouch_offset_y", -6.0f, 6.0f, localData.getPouchOffsetY(), val -> { localData.setPouchOffsetY(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 64, btnWidth, 18, "slider.faradayears.pouch_offset_z", -4.0f, 4.0f, localData.getPouchOffsetZ(), val -> { localData.setPouchOffsetZ(val); applyLiveUpdate(); }));
 
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 88, btnWidth, 18, "Ширина мешочка X: ", 0.10f, 0.50f, localData.getPouchScaleX(), val -> { localData.setPouchScaleX(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 108, btnWidth, 18, "Высота мешочка Y: ", 0.10f, 0.50f, localData.getPouchScaleY(), val -> { localData.setPouchScaleY(val); applyLiveUpdate(); }));
-                addRenderableWidget(new CustomSlider(panelLeft, topPos + 128, btnWidth, 18, "Глубина мешочка Z: ", 0.10f, 0.50f, localData.getPouchScaleZ(), val -> { localData.setPouchScaleZ(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 88, btnWidth, 18, "slider.faradayears.pouch_scale_x", 0.10f, 0.50f, localData.getPouchScaleX(), val -> { localData.setPouchScaleX(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 108, btnWidth, 18, "slider.faradayears.pouch_scale_y", 0.10f, 0.50f, localData.getPouchScaleY(), val -> { localData.setPouchScaleY(val); applyLiveUpdate(); }));
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 128, btnWidth, 18, "slider.faradayears.pouch_scale_z", 0.10f, 0.50f, localData.getPouchScaleZ(), val -> { localData.setPouchScaleZ(val); applyLiveUpdate(); }));
 
-                addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить только настройки мешочка"), b -> {
+                addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.reset"), b -> {
                     localData.resetPouchOnly();
                     applyLiveUpdate();
                     init();
                 }).bounds(panelLeft, topPos + 152, btnWidth, 18).build());
             }
 
-            addRenderableWidget(Button.builder(Component.literal("👗 Перейти к настройкам фигуры/тела ➡"), b -> switchTab(4)).bounds(panelLeft, topPos + (localData.isShowPouch() ? 174 : 26), btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.goto_body"), b -> switchTab(4)).bounds(panelLeft, topPos + (localData.isShowPouch() ? 174 : 26), btnWidth, 18).build());
         }
 
-        addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить вид 3D-модели"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.view.reset"), b -> {
             this.playerPreviewRotation = -35.0f;
             this.previewPitch = 10.0f;
             this.previewRoll = 0.0f;
@@ -255,12 +279,12 @@ public class EarsTailCustomizationScreen extends Screen {
             this.previewOffsetY = 0.0f;
         }).bounds(18, height - 28, width / 2 - 58, 20).build());
 
-        addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить всё по умолчанию"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.reset_all"), b -> {
             localData.applyFaradayPreset();
             applyLiveUpdate();
             init();
         }).bounds(width / 2 - 165, height - 28, 155, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("✔ Сохранить и закрыть"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.save_close"), b -> {
             saveAndSendToServer();
             onClose();
         }).bounds(width / 2 + 10, height - 28, 155, 20).build());
@@ -274,56 +298,75 @@ public class EarsTailCustomizationScreen extends Screen {
         }
     }
 
-    private String getWagAxisName(int axis) {
+    /** ★ 1.3.1: возвращает ключ локализации оси махания. */
+    private String getWagAxisKey(int axis) {
         return switch (axis) {
-            case 0 -> "Горизонтально (влево-вправо)";
-            case 1 -> "Вертикально (вверх-вниз)";
-            case 2 -> "Круговое (3D-волна)";
-            case 3 -> "Выключено (Без махания)";
-            default -> "Горизонтально";
+            case 0 -> "gui.faradayears.wag.0";
+            case 1 -> "gui.faradayears.wag.1";
+            case 2 -> "gui.faradayears.wag.2";
+            case 3 -> "gui.faradayears.wag.3";
+            default -> "gui.faradayears.wag.0";
         };
     }
 
-    private String getEarShapeName(int shape) {
+    /** ★ 1.3.1: ВКЛ/ВЫКЛ через lang-файлы. */
+    private Component onOff(boolean on) {
+        return Component.translatable(on ? "gui.faradayears.on" : "gui.faradayears.off");
+    }
+
+    /** ★ 1.3.1: ключ локализации режима физики хвоста. */
+    private String getPhysicsModeKey(int mode) {
+        return switch (mode) {
+            case 1 -> "gui.faradayears.physics.1";
+            case 2 -> "gui.faradayears.physics.2";
+            default -> "gui.faradayears.physics.0";
+        };
+    }
+
+    /** ★ 1.3.1: ключ локализации формы ушек. */
+    private String getEarShapeKey(int shape) {
         return switch (shape) {
-            case 1 -> "Заячьи / длинные";
-            case 2 -> "Кошачьи / острые";
-            case 3 -> "Лисьи / пушистые";
-            default -> "Фарадей (с кисточками)";
+            case 1 -> "gui.faradayears.ear_shape.1";
+            case 2 -> "gui.faradayears.ear_shape.2";
+            case 3 -> "gui.faradayears.ear_shape.3";
+            default -> "gui.faradayears.ear_shape.0";
         };
     }
 
-    private String getTailCountName(int count) {
+    /** ★ 1.3.1: ключ локализации количества хвостов. */
+    private String getTailCountKey(int count) {
         return switch (count) {
-            case 10 -> "★ 1 ХВОСТ (Супер-объёмный плюшевый!)";
-            case 1 -> "1 Хвост (Тонкий классический)";
-            case 2 -> "2 Хвоста (Некомата веером)";
-            case 3 -> "3 Хвоста (Веером)";
-            case 5 -> "5 Хвостов (Веером)";
-            case 7 -> "7 Хвостов (Веером)";
-            case 9 -> "✨ 9 Хвостов (Кицунэ веером!)";
-            default -> count + " Хвостов";
+            case 10 -> "gui.faradayears.tail_count.10";
+            case 1 -> "gui.faradayears.tail_count.1";
+            case 2 -> "gui.faradayears.tail_count.2";
+            case 3 -> "gui.faradayears.tail_count.3";
+            case 5 -> "gui.faradayears.tail_count.5";
+            case 7 -> "gui.faradayears.tail_count.7";
+            case 9 -> "gui.faradayears.tail_count.9";
+            default -> "gui.faradayears.tail_count.many";
         };
     }
 
-    private String getSegmentsDesc(int segs) {
+    /** ★ 1.3.1: ключ локализации описания длины. */
+    private String getSegmentsDescKey(int segs) {
         return switch (segs) {
-            case 1 -> "Боб / пушок";
-            case 2 -> "Средний";
-            case 3 -> "Пушистый Фарадей";
-            case 4 -> "Длинный лисий";
-            case 5 -> "Китсуне";
-            case 6 -> "Драконий / дуга";
-            default -> "Фарадей";
+            case 1 -> "gui.faradayears.segments.1";
+            case 2 -> "gui.faradayears.segments.2";
+            case 3 -> "gui.faradayears.segments.3";
+            case 4 -> "gui.faradayears.segments.4";
+            case 5 -> "gui.faradayears.segments.5";
+            case 6 -> "gui.faradayears.segments.6";
+            default -> "gui.faradayears.segments.3";
         };
     }
 
-    private String getGenderName(int gender) {
+    /** ★ 1.3.1: ключ локализации гендера. */
+    private String getGenderKey(int gender) {
         return switch (gender) {
-            case 1 -> "♀ Женский (Грудь и Бёдра)";
-            case 2 -> "♂ Мужской (Атлетический торс)";
-            case 3 -> "⚧ Комбинированный (Все пропорции)";
-            default -> "Нейтральный (Без изменений)";
+            case 1 -> "gui.faradayears.gender.1";
+            case 2 -> "gui.faradayears.gender.2";
+            case 3 -> "gui.faradayears.gender.3";
+            default -> "gui.faradayears.gender.0";
         };
     }
 
@@ -345,6 +388,8 @@ public class EarsTailCustomizationScreen extends Screen {
         if (Minecraft.getInstance().player != null) {
             if (canvasWidget != null && activeTab == 3) {
                 localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                // Пользователь нарисовал текстуру и сохраняет — включаем её применение автоматически:
+                localData.setCustomTextureEnabled(true);
             }
             PlayerEarsTailData data = ModAttachments.get(Minecraft.getInstance().player);
             data.copyFrom(localData);
@@ -402,9 +447,9 @@ public class EarsTailCustomizationScreen extends Screen {
             g.dispose();
 
             ImageIO.write(img, "PNG", dir);
-            b.setMessage(Component.literal("✔ Сохранено: faraday_template.png (64x64)"));
+            b.setMessage(Component.translatable("gui.faradayears.texture.saved"));
         } catch (Exception e) {
-            b.setMessage(Component.literal("❌ Ошибка сохранения"));
+            b.setMessage(Component.translatable("gui.faradayears.texture.save_error"));
         }
     }
 
@@ -412,7 +457,7 @@ public class EarsTailCustomizationScreen extends Screen {
         try {
             File file = new File(Minecraft.getInstance().gameDirectory, "faraday_custom.png");
             if (!file.exists()) {
-                b.setMessage(Component.literal("⚠️ Файл faraday_custom.png не найден"));
+                b.setMessage(Component.translatable("gui.faradayears.texture.not_found"));
                 return;
             }
             try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
@@ -420,12 +465,13 @@ public class EarsTailCustomizationScreen extends Screen {
                 if (img != null && canvasWidget != null) {
                     canvasWidget.importFromNativeImage(img);
                     localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                    localData.setCustomTextureEnabled(true);
                     applyLiveUpdate();
-                    b.setMessage(Component.literal("✔ Текстура загружена!"));
+                    b.setMessage(Component.translatable("gui.faradayears.texture.loaded"));
                 }
             }
         } catch (Exception e) {
-            b.setMessage(Component.literal("❌ Ошибка чтения .png"));
+            b.setMessage(Component.translatable("gui.faradayears.texture.read_error"));
         }
     }
 
@@ -468,7 +514,7 @@ public class EarsTailCustomizationScreen extends Screen {
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
         guiGraphics.fill(15, 30, width / 2 - 35, height - 35, 0xBB161412);
-        guiGraphics.drawCenteredString(font, "🔴 3D Вид: ЛКМ=Вращение X/Y | ПКМ=Наклон Z/Зум | СКМ=Сдвиг", (width / 2 - 35) / 2 + 10, 35, 0xFFEE8C1E);
+        guiGraphics.drawCenteredString(font, Component.translatable("gui.faradayears.preview.help"), (width / 2 - 35) / 2 + 10, 35, 0xFFEE8C1E);
 
         if (Minecraft.getInstance().player != null) {
             int prevX = (width / 2 - 35) / 2 + 10;
@@ -476,20 +522,22 @@ public class EarsTailCustomizationScreen extends Screen {
             renderCustomEntityPreview(prevX, prevY, this.previewScale, this.playerPreviewRotation, this.previewPitch, this.previewRoll, this.previewOffsetX, this.previewOffsetY, Minecraft.getInstance().player);
         }
 
-        guiGraphics.drawString(font, "Форма: " + getEarShapeName(localData.getEarShape()), 22, height - 64, 0xF5C037);
-        guiGraphics.drawString(font, "Режим: " + getTailCountName(localData.getTailCount()), 22, height - 52, 0xF5C037);
+        guiGraphics.drawString(font, Component.translatable("gui.faradayears.status.shape", Component.translatable(getEarShapeKey(localData.getEarShape()))), 22, height - 64, 0xF5C037);
+        guiGraphics.drawString(font, Component.translatable("gui.faradayears.status.mode", Component.translatable(getTailCountKey(localData.getTailCount()))), 22, height - 52, 0xF5C037);
 
         guiGraphics.fill(width / 2 - 30, 35, width - 15, height - 35, 0xBB1E1A17);
 
-        if (activeTab == 3) {
-            int infoTop = 42 + 152;
-            guiGraphics.drawString(font, "ℹ️ ПОДСКАЗКА ПО ЮВ-РАЗВЁРТКЕ 64x64 (БЕЗ НАЛОЖЕНИЙ):", width / 2 - 20, infoTop, 0xFFEE8C1E);
-            guiGraphics.drawString(font, "1. Нажми [💾 Скачать понятный шаблон развёртки (64x64.png)].", width / 2 - 20, infoTop + 12, 0xDDDDDD);
-            guiGraphics.drawString(font, "2. В папке игры (.minecraft) появится 'faraday_template.png'.", width / 2 - 20, infoTop + 22, 0xAAAAAA);
-            guiGraphics.drawString(font, "   • Полоса Y=0..15 — Внешняя шерсть Ушек.", width / 2 - 20, infoTop + 32, 0x37C0F5);
-            guiGraphics.drawString(font, "   • Полоса Y=16..31 — Внутренняя шерсть раковины и Бантик (X=48..63).", width / 2 - 20, infoTop + 42, 0x2ECC71);
-            guiGraphics.drawString(font, "   • Полоса Y=32..63 — Шерсть Хвоста (Y=32..47) и его Кончика (Y=48..63).", width / 2 - 20, infoTop + 52, 0xF5C037);
-            guiGraphics.drawString(font, "3. Раскрась в редакторе, сохрани как 'faraday_custom.png' и загрузи!", width / 2 - 20, infoTop + 62, 0xDDDDDD);
+        if (activeTab == 3 && canvasWidget != null) {
+            // ★ 1.3.0: индикатор текущего цвета — сразу видно, чем сейчас рисуешь:
+            int cc = canvasWidget.getCurrentColorArgb();
+            boolean eraser = (cc >>> 24) == 0;
+            guiGraphics.fill(width / 2 + 131, 246, width / 2 + 143, 258, eraser ? 0xFF666666 : cc);
+            guiGraphics.drawString(font, Component.translatable(eraser ? "gui.faradayears.indicator.eraser" : "gui.faradayears.indicator.color"), width / 2 + 147, 248, 0xFFEEEEEE, false);
+            if (height > 280) {
+                // ★ 1.3.0: короткая шпаргалка по развёртке (теперь v идёт ВДОЛЬ хвоста):
+                guiGraphics.drawString(font, Component.translatable("gui.faradayears.hint.vertical"), width / 2 - 25, 259, 0xFFEE8C1E, false);
+                guiGraphics.drawString(font, Component.translatable("gui.faradayears.hint.horizontal"), width / 2 - 25, 270, 0xFFBBBBBB, false);
+            }
         }
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
@@ -561,7 +609,7 @@ public class EarsTailCustomizationScreen extends Screen {
         private final java.util.function.Consumer<Float> onChange;
 
         public CustomSlider(int x, int y, int width, int height, String prefix, float minVal, float maxVal, float currentVal, java.util.function.Consumer<Float> onChange) {
-            super(x, y, width, height, Component.literal(prefix + String.format("%.2f", currentVal)), (Mth.clamp(currentVal, minVal, maxVal) - minVal) / (maxVal - minVal));
+            super(x, y, width, height, Component.translatable(prefix, String.format("%.2f", currentVal)), (Mth.clamp(currentVal, minVal, maxVal) - minVal) / (maxVal - minVal));
             this.prefix = prefix;
             this.minVal = minVal;
             this.maxVal = maxVal;
@@ -571,7 +619,7 @@ public class EarsTailCustomizationScreen extends Screen {
         @Override
         protected void updateMessage() {
             float val = minVal + (float) value * (maxVal - minVal);
-            setMessage(Component.literal(prefix + String.format("%.2f", val)));
+            setMessage(Component.translatable(prefix, String.format("%.2f", val)));
         }
 
         @Override
@@ -581,3 +629,4 @@ public class EarsTailCustomizationScreen extends Screen {
         }
     }
 }
+
