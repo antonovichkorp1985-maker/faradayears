@@ -133,44 +133,63 @@ public class EarsTailCustomizationScreen extends Screen {
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 40, btnWidth, 18, "Веерный развал хвостов Y: ", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
+            // ★ 1.2.0: переключатель режима физики хвоста (Классика / Баланс / Поднятая дуга):
+            addRenderableWidget(Button.builder(Component.literal("⚙ Физика: " + getPhysicsModeName(localData.getTailPhysicsMode())), b -> {
+                localData.setTailPhysicsMode((localData.getTailPhysicsMode() + 1) % 3);
+                b.setMessage(Component.literal("⚙ Физика: " + getPhysicsModeName(localData.getTailPhysicsMode())));
+                applyLiveUpdate();
+            }).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
+
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 60, btnWidth, 18, "Веерный развал хвостов Y: ", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
 
             addRenderableWidget(Button.builder(Component.literal("Сегментов в длину: " + localData.getTailSegments() + " (" + getSegmentsDesc(localData.getTailSegments()) + ")"), b -> {
                 localData.setTailSegments(localData.getTailSegments() % 6 + 1);
                 b.setMessage(Component.literal("Сегментов в длину: " + localData.getTailSegments() + " (" + getSegmentsDesc(localData.getTailSegments()) + ")"));
                 applyLiveUpdate();
-            }).bounds(panelLeft, topPos + 60, btnWidth, 18).build());
+            }).bounds(panelLeft, topPos + 80, btnWidth, 18).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 80, btnWidth, 18, "Длина каждого сегмента Z: ", 3.0f, 10.0f, localData.getTailSegmentLength(), val -> { localData.setTailSegmentLength(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 100, btnWidth, 18, "Сужение к кончику: ", 0.35f, 1.45f, localData.getTailTaper(), val -> { localData.setTailTaper(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 120, btnWidth, 18, "Общая ширина X: ", 0.5f, 2.5f, localData.getTailScaleX(), val -> { localData.setTailScaleX(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 140, btnWidth, 18, "Подъём от поясницы (сдвиг Z/Y): ", -16.0f, 16.0f, localData.getTailRotX(), val -> { localData.setTailRotX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 100, btnWidth, 18, "Длина каждого сегмента Z: ", 3.0f, 10.0f, localData.getTailSegmentLength(), val -> { localData.setTailSegmentLength(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 120, btnWidth, 18, "Сужение к кончику: ", 0.35f, 1.45f, localData.getTailTaper(), val -> { localData.setTailTaper(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 140, btnWidth, 18, "Общая ширина X: ", 0.5f, 2.5f, localData.getTailScaleX(), val -> { localData.setTailScaleX(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 160, btnWidth, 18, "Подъём от поясницы (сдвиг Z/Y): ", -16.0f, 16.0f, localData.getTailRotX(), val -> { localData.setTailRotX(val); applyLiveUpdate(); }));
 
             addRenderableWidget(Button.builder(Component.literal("Ось махания: " + getWagAxisName(localData.getTailWagAxis())), b -> {
                 localData.setTailWagAxis((localData.getTailWagAxis() + 1) % 4);
                 b.setMessage(Component.literal("Ось махания: " + getWagAxisName(localData.getTailWagAxis())));
                 applyLiveUpdate();
-            }).bounds(panelLeft, topPos + 160, btnWidth, 18).build());
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 180, btnWidth, 18, "Амплитуда махания: ", 0.0f, 45.0f, localData.getTailWagAmplitude(), val -> { localData.setTailWagAmplitude(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 200, btnWidth, 18, "Скорость махания: ", 0.5f, 5.0f, localData.getTailWagSpeed(), val -> { localData.setTailWagSpeed(val); applyLiveUpdate(); }));
+            }).bounds(panelLeft, topPos + 180, btnWidth, 18).build());
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 200, btnWidth, 18, "Амплитуда махания: ", 0.0f, 45.0f, localData.getTailWagAmplitude(), val -> { localData.setTailWagAmplitude(val); applyLiveUpdate(); }));
+            addRenderableWidget(new CustomSlider(panelLeft, topPos + 220, btnWidth, 18, "Скорость махания: ", 0.5f, 5.0f, localData.getTailWagSpeed(), val -> { localData.setTailWagSpeed(val); applyLiveUpdate(); }));
 
             addRenderableWidget(Button.builder(Component.literal("🔄 Сбросить только настройки хвоста"), b -> {
                 localData.resetTailOnly();
                 applyLiveUpdate();
                 init();
-            }).bounds(panelLeft, topPos + 222, btnWidth, 18).build());
+            }).bounds(panelLeft, topPos + 242, btnWidth, 18).build());
         } else if (activeTab == 3) {
-            addRenderableWidget(Button.builder(Component.literal("💾 Скачать понятный 2-полосный шаблон"), b -> exportCustom2StripTemplateToDisk(b)).bounds(panelLeft, topPos, btnWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("📂 Загрузить faraday_custom.png из папки игры"), b -> loadCustomTextureFromDisk(b)).bounds(panelLeft, topPos + 22, btnWidth, 20).build());
+            // ★ 1.2.0: тумблер применения кастомной текстуры (единый лист 64x64):
+            addRenderableWidget(Button.builder(Component.literal("✔ Кастомная текстура: " + (localData.isCustomTextureEnabled() ? "ВКЛ" : "ВЫКЛ")), b -> {
+                localData.setCustomTextureEnabled(!localData.isCustomTextureEnabled());
+                b.setMessage(Component.literal("✔ Кастомная текстура: " + (localData.isCustomTextureEnabled() ? "ВКЛ" : "ВЫКЛ")));
+                applyLiveUpdate();
+            }).bounds(panelLeft, topPos, btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("💾 Скачать шаблон 64x64 (4 зоны)"), b -> exportCustom2StripTemplateToDisk(b)).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("📂 Загрузить faraday_custom.png из папки игры"), b -> loadCustomTextureFromDisk(b)).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
 
-            canvasWidget = new TextureCanvasWidget(panelLeft, topPos + 46, 100, 100);
+            canvasWidget = new TextureCanvasWidget(panelLeft, topPos + 62, 150, 150);
+            canvasWidget.setOnPaintListener(() -> {
+                localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                localData.setCustomTextureEnabled(true); // рисуешь — значит, хочешь видеть текстуру
+                applyLiveUpdate();
+            });
             addRenderableWidget(canvasWidget);
 
-            addRenderableWidget(Button.builder(Component.literal("Тёмная шерсть"), b -> canvasWidget.setCurrentColor(0x262220)).bounds(panelLeft + 106, topPos + 46, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Оранжевый"), b -> canvasWidget.setCurrentColor(0xEE8C1E)).bounds(panelLeft + 106, topPos + 66, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Золотой"), b -> canvasWidget.setCurrentColor(0xF1C40F)).bounds(panelLeft + 106, topPos + 86, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Красно-коричн."), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 106, topPos + 106, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("Белый кончик"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 106, topPos + 126, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("Тёмная шерсть"), b -> canvasWidget.setCurrentColor(0x262220)).bounds(panelLeft + 156, topPos + 62, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("Оранжевый"), b -> canvasWidget.setCurrentColor(0xEE8C1E)).bounds(panelLeft + 156, topPos + 82, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("Золотой"), b -> canvasWidget.setCurrentColor(0xF1C40F)).bounds(panelLeft + 156, topPos + 102, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("Красно-коричн."), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 156, topPos + 122, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("Белый кончик"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 156, topPos + 142, 88, 18).build());
+            addRenderableWidget(Button.builder(Component.literal("🧽 Ластик (или ПКМ)"), b -> canvasWidget.setCurrentColorTransparent()).bounds(panelLeft + 156, topPos + 162, 88, 18).build());
         } else if (activeTab == 4) {
             addRenderableWidget(Button.builder(Component.literal("Гендер: " + getGenderName(localData.getGender())), b -> {
                 localData.setGender((localData.getGender() + 1) % 4);
@@ -284,6 +303,15 @@ public class EarsTailCustomizationScreen extends Screen {
         };
     }
 
+    /** ★ 1.2.0: название режима физики хвоста для кнопки во вкладке «Хвост». */
+    private String getPhysicsModeName(int mode) {
+        return switch (mode) {
+            case 1 -> "Баланс (дуга + касание земли)";
+            case 2 -> "Поднятая дуга (1.0.1)";
+            default -> "Классика (стелется, 1.0.0)";
+        };
+    }
+
     private String getEarShapeName(int shape) {
         return switch (shape) {
             case 1 -> "Заячьи / длинные";
@@ -345,6 +373,8 @@ public class EarsTailCustomizationScreen extends Screen {
         if (Minecraft.getInstance().player != null) {
             if (canvasWidget != null && activeTab == 3) {
                 localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                // Пользователь нарисовал текстуру и сохраняет — включаем её применение автоматически:
+                localData.setCustomTextureEnabled(true);
             }
             PlayerEarsTailData data = ModAttachments.get(Minecraft.getInstance().player);
             data.copyFrom(localData);
@@ -420,6 +450,7 @@ public class EarsTailCustomizationScreen extends Screen {
                 if (img != null && canvasWidget != null) {
                     canvasWidget.importFromNativeImage(img);
                     localData.setCustomTextureBase64(canvasWidget.exportToBase64());
+                    localData.setCustomTextureEnabled(true);
                     applyLiveUpdate();
                     b.setMessage(Component.literal("✔ Текстура загружена!"));
                 }
@@ -581,3 +612,4 @@ public class EarsTailCustomizationScreen extends Screen {
         }
     }
 }
+

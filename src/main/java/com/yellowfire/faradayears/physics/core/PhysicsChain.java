@@ -13,15 +13,26 @@ import java.util.List;
  * Implements Base-Concentrated Micro-Joint Distribution (`getSegmentLength`):
  * Places 6 ultra-short micro-joints (~6-8 cm each) precisely right at the base where the tail
  * exits the lower back and bends toward the ground (`именно между первыми суставами`).
- * This divides the downward bend across 6 smooth micro-angles, completely rounding out
- * any sharp angle/corner (`резкий угол = 0`) into a polished organic fox curve!
+ *
+ * ★ 1.2.0 — ТРИ РЕЖИМА ФИЗИКИ ХВОСТА (переключаются в GUI, синхронизируются по сети):
+ *  - {@link #MODE_CLASSIC}  «Классика»   — поведение 1.0.0: мягкая верёвка, стелется по земле
+ *                                          (градиент гравитации к кончику + settleDistalNearGround).
+ *  - {@link #MODE_BALANCED} «Баланс»     — новый средний режим: приподнятая дуга, но кончик
+ *                                          мягко касается земли (полсилы поддержки и присадки).
+ *  - {@link #MODE_LIFTED}   «Поднятая»   — поведение 1.0.1 fox-tail-lift: горизонтальный выход
+ *                                          из поясницы, приподнятая дуга, земля не притягивает.
  */
 public class PhysicsChain {
+    public static final int MODE_CLASSIC = 0;
+    public static final int MODE_BALANCED = 1;
+    public static final int MODE_LIFTED = 2;
+
     public final List<PhysicsParticle> particles = new ArrayList<>();
 
     public double segmentLength = 0.42D;
     public double damping = 0.84D;
     public int iterations = 10;
+    public int physicsMode = MODE_CLASSIC;
 
     private final PhysicsWorldCollider collider = new PhysicsWorldCollider();
 
@@ -45,7 +56,9 @@ public class PhysicsChain {
         Vec3 p = root;
         for (int i = 0; i < count; i++) {
             double segLen = getSegmentLength(i, count, segmentLength);
-            p = p.add(dir.scale(segLen));
+            // В режимах Баланс/Поднятая стартовая укладка идёт по анатомической дуге:
+            Vec3 step = (physicsMode == MODE_CLASSIC) ? dir : restDirection(dir, i, count);
+            p = p.add(step.scale(segLen));
             double taper = count <= 1 ? 0.0D : i / (double) (count - 1);
             PhysicsParticle particle = new PhysicsParticle(p, Math.max(0.09D, baseRadius * (1.0D - taper * 0.42D)));
             particle.mass = 1.0D + taper * 0.40D;
@@ -77,7 +90,10 @@ public class PhysicsChain {
         sideVector = sideVector.normalize();
         Vec3 upVector = sideVector.cross(baseDir).normalize();
 
-        // 1) Verlet integration with 100% constant gravity (`-0.070D`) across all heights and segments
+        // 1) Verlet integration. Распределение гравитации зависит от режима:
+        //    Классика — почти невесомое основание и усиленный к кончику градиент (1.0.0);
+        //    Баланс   — смягчённый градиент;
+        //    Поднятая — одинаковая гравитация для всех частиц (1.0.1).
         for (int i = 0; i < particles.size(); i++) {
             PhysicsParticle p = particles.get(i);
             p.touchingGround = false;
@@ -91,11 +107,16 @@ public class PhysicsChain {
                 else if (wagAxis == 1) lateralWag = upVector.scale(wagForce * distal);
                 else if (wagAxis == 2) lateralWag = sideVector.scale(wagForce * distal).add(upVector.scale(wagForce2 * distal));
             }
-            if (i == 0) {
-                p.applyForce(gravity.scale(0.08D));
+            double gScale;
+            if (physicsMode == MODE_CLASSIC) {
+                gScale = (i == 0) ? 0.08D : (1.0D + distal * 0.35D);
+            } else if (physicsMode == MODE_BALANCED) {
+                gScale = (i == 0) ? 0.45D : (0.85D + distal * 0.20D);
             } else {
-                p.applyForce(gravity.scale(1.0D + distal * 0.35D).add(lateralWag));
+                gScale = 1.0D;
             }
+            p.applyForce(gravity.scale(gScale));
+            if (lateralWag.lengthSqr() > 0.0D) p.applyForce(lateralWag);
             p.verlet(damping);
         }
 
@@ -113,18 +134,18 @@ public class PhysicsChain {
                 double segWagRad = Math.toRadians(wagAmp * Math.sin(segTime));
                 double segWagRad2 = Math.toRadians(wagAmp * Math.cos(segTime * 0.8D));
 
-                Vec3 jointDir = baseDir;
+                Vec3 jointDir = (physicsMode == MODE_CLASSIC) ? baseDir : restDirection(baseDir, i, particles.size());
                 if (wagAxis != 3 && wagAmp > 0.05f) {
                     if (wagAxis == 0) {
                         double cos = Math.cos(segWagRad * (0.35D + distal * 0.45D));
                         double sin = Math.sin(segWagRad * (0.35D + distal * 0.45D));
-                        jointDir = new Vec3(baseDir.x * cos - baseDir.z * sin, baseDir.y, baseDir.x * sin + baseDir.z * cos).normalize();
+                        jointDir = new Vec3(jointDir.x * cos - jointDir.z * sin, jointDir.y, jointDir.x * sin + jointDir.z * cos).normalize();
                     } else if (wagAxis == 1) {
-                        jointDir = baseDir.add(upVector.scale(Math.sin(segTime) * (wagAmp * 0.008D))).normalize();
+                        jointDir = jointDir.add(upVector.scale(Math.sin(segTime) * (wagAmp * 0.008D))).normalize();
                     } else if (wagAxis == 2) {
                         double cos = Math.cos(segWagRad * (0.25D + distal * 0.35D));
                         double sin = Math.sin(segWagRad * (0.25D + distal * 0.35D));
-                        Vec3 horiz = new Vec3(baseDir.x * cos - baseDir.z * sin, baseDir.y, baseDir.x * sin + baseDir.z * cos);
+                        Vec3 horiz = new Vec3(jointDir.x * cos - jointDir.z * sin, jointDir.y, jointDir.x * sin + jointDir.z * cos);
                         jointDir = horiz.add(upVector.scale(Math.sin(segWagRad2) * (wagAmp * 0.006D))).normalize();
                     }
                 }
@@ -143,18 +164,53 @@ public class PhysicsChain {
                 }
                 if (crouching) groundFade = Math.min(groundFade, 0.25D);
 
-                if (i == 0) {
-                    Vec3 baseTarget = root.add(jointDir.scale(segLen));
-                    double k0 = baseStiffness * (0.25D + 0.75D * groundFade);
-                    p.position = lerp(projected, baseTarget, k0);
-                } else if (i < 6) {
-                    // Первые 6 микросуставов у основания мягко удерживают плавное анатомическое скругление:
-                    Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                    double kSpan = (0.50D - i * 0.06D) * baseStiffness;
-                    double effectiveK = kSpan * (0.15D + 0.85D * groundFade);
-                    p.position = lerp(projected, arcTarget, effectiveK);
+                if (physicsMode == MODE_LIFTED) {
+                    // ★ ПОДНЯТАЯ ДУГА (1.0.1): точный горизонтальный выход у поясницы,
+                    //   лёгкая поддерживающая дуга по всей длине, к земле не притягиваем.
+                    if (i == 0) {
+                        double k0 = baseStiffness * (0.75D + 0.25D * groundFade);
+                        p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
+                    } else {
+                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
+                        double restWeight = baseStiffness * Mth.lerp(distal, 0.52D, 0.30D);
+                        restWeight *= 1.0D + 0.35D * (1.0D - groundFade);
+                        if (crouching) restWeight *= 0.90D;
+                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
+                    }
+                } else if (physicsMode == MODE_BALANCED) {
+                    // ★ БАЛАНС: средние значения между Классикой и Поднятой —
+                    //   дуга держится, но мягче; кончику позволено опускаться к земле.
+                    if (i == 0) {
+                        double k0 = baseStiffness * (0.50D + 0.50D * groundFade);
+                        p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
+                    } else if (i < 4) {
+                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
+                        double kSpan = (0.38D - i * 0.07D) * baseStiffness;
+                        double effectiveK = kSpan * (0.20D + 0.80D * groundFade);
+                        p.position = lerp(projected, arcTarget, effectiveK);
+                    } else {
+                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
+                        double restWeight = baseStiffness * Mth.lerp(distal, 0.34D, 0.16D);
+                        restWeight *= 1.0D + 0.18D * (1.0D - groundFade);
+                        if (crouching) restWeight *= 0.90D;
+                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.04D, 0.18D));
+                    }
                 } else {
-                    p.position = projected;
+                    // ★ КЛАССИКА (1.0.0): слабое основание, микро-суставы у корня,
+                    //   дальше — свободная верёвка, которую гравитация кладёт на землю.
+                    if (i == 0) {
+                        Vec3 baseTarget = root.add(jointDir.scale(segLen));
+                        double k0 = baseStiffness * (0.25D + 0.75D * groundFade);
+                        p.position = lerp(projected, baseTarget, k0);
+                    } else if (i < 6) {
+                        // Первые 6 микросуставов у основания мягко удерживают плавное анатомическое скругление:
+                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
+                        double kSpan = (0.50D - i * 0.06D) * baseStiffness;
+                        double effectiveK = kSpan * (0.15D + 0.85D * groundFade);
+                        p.position = lerp(projected, arcTarget, effectiveK);
+                    } else {
+                        p.position = projected;
+                    }
                 }
 
                 p.position = collideOwnerCylinder(owner, p.position, p.radius, i);
@@ -169,6 +225,68 @@ public class PhysicsChain {
         }
 
         settleDistalNearGround(level, owner);
+    }
+
+    /**
+     * Режимная «присадка» дистальной части к земле:
+     *  - Классика: как в 1.0.0 — сильное притяжение (0.95) в пределах 45 см над землёй;
+     *  - Баланс:   мягкое (0.45) и только для дальней половины хвоста в пределах 28 см;
+     *  - Поднятая: отключено (хвост не должен «прилипать» к земле).
+     */
+    private void settleDistalNearGround(Level level, Entity owner) {
+        if (physicsMode == MODE_LIFTED) return;
+        if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
+
+        boolean balanced = (physicsMode == MODE_BALANCED);
+        double maxGap = balanced ? 0.28D : 0.45D;
+        double pull = balanced ? 0.45D : 0.95D;
+        int from = balanced ? particles.size() / 2 : 1;
+
+        for (int i = from; i < particles.size(); i++) {
+            PhysicsParticle p = particles.get(i);
+            double groundY = collider.findGroundTopBelow(level, p.position, p.radius, 1.25D);
+            if (Double.isNaN(groundY)) continue;
+            double gap = (p.position.y - p.radius) - groundY;
+            if (gap > 0.001D && gap < maxGap) {
+                Vec3 correction = new Vec3(0, -gap * pull, 0);
+                p.position = p.position.add(correction);
+                PhysicsWorldCollider.CollisionResult result = collider.collideSphere(level, owner, p.position, p.radius);
+                p.position = result.position;
+                p.touchingGround = p.touchingGround || result.ground;
+                if (p.touchingGround) {
+                    p.slideOnGround(0.80D);
+                }
+            }
+        }
+    }
+
+    /**
+     * Анатомическое направление покоя для сустава `index` (режимы Баланс/Поднятая):
+     * первый сегмент выходит из поясницы горизонтально, середина мягко приподнята,
+     * кончик слегка опускается. Классика использует направление как есть (с наклоном вниз).
+     */
+    private Vec3 restDirection(Vec3 horizontalBack, int index, int count) {
+        if (physicsMode == MODE_CLASSIC) return horizontalBack;
+        Vec3 back = new Vec3(horizontalBack.x, 0.0D, horizontalBack.z);
+        if (back.lengthSqr() < 1.0E-8D) back = new Vec3(0.0D, 0.0D, -1.0D);
+        back = back.normalize();
+        if (index <= 0 || count <= 1) return back;
+
+        boolean lifted = (physicsMode == MODE_LIFTED);
+        double lift = lifted ? 0.34D : 0.20D;
+        double drop = lifted ? 0.18D : 0.10D;
+        double tipStart = lifted ? 0.72D : 0.78D;
+
+        double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
+        double liftAngle = lift * Math.sin(Math.PI * t);
+        double tipDrop = drop * smoothstep(tipStart, 1.0D, t);
+        double angle = liftAngle - tipDrop;
+        return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
+    }
+
+    private double smoothstep(double edge0, double edge1, double x) {
+        double t = Mth.clamp((x - edge0) / (edge1 - edge0), 0.0D, 1.0D);
+        return t * t * (3.0D - 2.0D * t);
     }
 
     private Vec3 lerp(Vec3 a, Vec3 b, double t) {
@@ -191,26 +309,6 @@ public class PhysicsChain {
             return point.add((dx / dist) * push, 0, (dz / dist) * push);
         }
         return point;
-    }
-
-    private void settleDistalNearGround(Level level, Entity owner) {
-        if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
-        for (int i = 1; i < particles.size(); i++) {
-            PhysicsParticle p = particles.get(i);
-            double groundY = collider.findGroundTopBelow(level, p.position, p.radius, 1.25D);
-            if (Double.isNaN(groundY)) continue;
-            double gap = (p.position.y - p.radius) - groundY;
-            if (gap > 0.001D && gap < 0.45D) {
-                Vec3 correction = new Vec3(0, -gap * 0.95D, 0);
-                p.position = p.position.add(correction);
-                PhysicsWorldCollider.CollisionResult result = collider.collideSphere(level, owner, p.position, p.radius);
-                p.position = result.position;
-                p.touchingGround = p.touchingGround || result.ground;
-                if (p.touchingGround) {
-                    p.slideOnGround(0.80D);
-                }
-            }
-        }
     }
 
     public Vec3 getPoint(int index) {

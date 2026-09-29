@@ -1,0 +1,78 @@
+name: release-1.2.0
+
+# Сборка и публикация «совмещённой» версии 1.2.0 (режимы физики + текстуры):
+# 1) собирает ветку 1.21.1-physics-modes из исходников ветки сессии (поверх main),
+# 2) прогоняет gradle build на раннере (в песочнице нет доступа к maven.neoforged.net),
+# 3) публикует релиз v1.2.0 с JAR и исходниками. main не затрагивается.
+# Запуск: пуш в ветку сессии с маркером [release-1.2.0] в сообщении коммита.
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0ee50-faradayears]
+
+concurrency:
+  group: release-1.2.0
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release-1.2.0]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout session branch (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assemble mod branch 1.21.1-physics-modes
+        run: |
+          git config user.name "arena-ai-coding-agent[bot]"
+          git config user.email "arena-ai-coding-agent[bot]@users.noreply.github.com"
+          git checkout -B 1.21.1-physics-modes origin/main
+          git checkout "origin/${{ github.ref_name }}" -- src gradle.properties CHANGELOG.md README.md RELEASE_NOTES_v1.2.0.md
+          git add -A
+          if git diff --cached --quiet; then
+            echo "нет изменений относительно main — останавливаюсь"
+            exit 1
+          fi
+          git commit -m "1.2.0: три режима физики хвоста (Классика/Баланс/Поднятая) + рабочая система кастомных текстур"
+          git push --force-with-lease origin 1.21.1-physics-modes
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Collect artifacts
+        run: |
+          ls -la build/libs
+          JAR="$(ls build/libs/FaradayEarsMod-*.jar | grep -v -- '-sources' | head -n 1)"
+          echo "JAR=$JAR" >> "$GITHUB_ENV"
+          test -n "$JAR"
+          git archive --format=zip -o FaradayEarsMod-1.21.1-1.2.0-source.zip HEAD
+          sha256sum "$JAR" FaradayEarsMod-1.21.1-1.2.0-source.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create release v1.2.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.2.0 >/dev/null 2>&1; then
+            gh release upload v1.2.0 "$JAR" FaradayEarsMod-1.21.1-1.2.0-source.zip SHA256SUMS.txt --clobber
+          else
+            gh release create v1.2.0 \
+              --target 1.21.1-physics-modes \
+              --title "FaradayEarsMod 1.21.1 — 1.2.0 (режимы физики + текстуры)" \
+              --notes-file RELEASE_NOTES_v1.2.0.md \
+              "$JAR" FaradayEarsMod-1.21.1-1.2.0-source.zip SHA256SUMS.txt
+          fi

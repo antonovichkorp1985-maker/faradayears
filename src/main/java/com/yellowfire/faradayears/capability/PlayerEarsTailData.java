@@ -126,6 +126,8 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         this.tailWagAmplitude = other.tailWagAmplitude;
         this.tailWagSpeed = other.tailWagSpeed;
         this.customTextureBase64 = other.customTextureBase64;
+        this.tailPhysicsMode = other.tailPhysicsMode;
+        this.customTextureEnabled = other.customTextureEnabled;
 
         this.gender = other.gender;
         this.showChest = other.showChest;
@@ -430,6 +432,9 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         if (nbt.contains("ShowEars")) showEars = nbt.getBoolean("ShowEars");
         if (nbt.contains("EarShape")) earShape = nbt.getInt("EarShape");
         if (nbt.contains("TailCount")) tailCount = nbt.getInt("TailCount");
+        if (nbt.contains("TailFanSpread")) nbt.contains("ShowEars")) showEars = nbt.getBoolean("ShowEars");
+        if (nbt.contains("EarShape")) earShape = nbt.getInt("EarShape");
+        if (nbt.contains("TailCount")) tailCount = nbt.getInt("TailCount");
         if (nbt.contains("TailFanSpread")) tailFanSpread = nbt.getFloat("TailFanSpread");
         if (nbt.contains("TailSegments")) tailSegments = nbt.getInt("TailSegments");
         if (nbt.contains("TailSegmentLength")) tailSegmentLength = nbt.getFloat("TailSegmentLength");
@@ -463,6 +468,8 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         if (nbt.contains("TailWagAmplitude")) tailWagAmplitude = nbt.getFloat("TailWagAmplitude");
         if (nbt.contains("TailWagSpeed")) tailWagSpeed = nbt.getFloat("TailWagSpeed");
         if (nbt.contains("CustomTextureBase64")) customTextureBase64 = nbt.getString("CustomTextureBase64");
+        if (nbt.contains("TailPhysicsMode")) tailPhysicsMode = nbt.getInt("TailPhysicsMode");
+        if (nbt.contains("CustomTextureEnabled")) customTextureEnabled = nbt.getBoolean("CustomTextureEnabled");
         if (nbt.contains("Gender")) gender = nbt.getInt("Gender");
         if (nbt.contains("ShowChest")) showChest = nbt.getBoolean("ShowChest");
         if (nbt.contains("ShowHips")) showHips = nbt.getBoolean("ShowHips");
