@@ -98,7 +98,7 @@ public final class CustomTailTextureManager {
     }
 
     /** Быстрая проверка без создания текстуры. */
-    public static boolean hasCustomTexture(PlayerTextureSource data) {
+    public static boolean hasCustomTexture(com.yellowfire.faradayears.capability.PlayerEarsTailData data) {
         return data != null && data.isCustomTextureEnabled()
                 && data.getCustomTextureBase64() != null && !data.getCustomTextureBase64().isEmpty();
     }
