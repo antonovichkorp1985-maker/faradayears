@@ -4,6 +4,7 @@ name: release-1.2.0
 # 1) собирает ветку 1.21.1-physics-modes из исходников ветки сессии (поверх main),
 # 2) прогоняет gradle build на раннере (в песочнице нет доступа к maven.neoforged.net),
 # 3) публикует релиз v1.2.0 с JAR и исходниками. main не затрагивается.
+# Лог сборки при любом исходе коммитится в ветку сессии как BUILD_LOG_1.2.0.txt.
 # Запуск: пуш в ветку сессии с маркером [release-1.2.0] в сообщении коммита.
 on:
   workflow_dispatch:
@@ -49,11 +50,31 @@ jobs:
           cache: gradle
 
       - name: Build with Gradle
+        id: gradle
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon
+          set +e
+          ./gradlew build --no-daemon > /tmp/build_log.txt 2>&1
+          EXIT=$?
+          echo "exit=$EXIT" >> "$GITHUB_OUTPUT"
+          echo "gradle exit: $EXIT"
+          tail -n 150 /tmp/build_log.txt
+
+      - name: Publish build log to session branch
+        if: always()
+        run: |
+          git config user.name "arena-ai-coding-agent[bot]"
+          git config user.email "arena-ai-coding-agent[bot]@users.noreply.github.com"
+          git fetch origin "${{ github.ref_name }}"
+          git checkout "origin/${{ github.ref_name }}" -- .github 2>/dev/null || true
+          git checkout -B log-carrier "origin/${{ github.ref_name }}"
+          cp /tmp/build_log.txt BUILD_LOG_1.2.0.txt
+          git add BUILD_LOG_1.2.0.txt
+          git commit -m "build log 1.2.0 (run ${GITHUB_RUN_ID})"
+          git push origin "HEAD:${{ github.ref_name }}"
 
       - name: Collect artifacts
+        if: steps.gradle.outputs.exit == '0'
         run: |
           ls -la build/libs
           JAR="$(ls build/libs/FaradayEarsMod-*.jar | grep -v -- '-sources' | head -n 1)"
@@ -64,6 +85,7 @@ jobs:
           cat SHA256SUMS.txt
 
       - name: Create release v1.2.0
+        if: steps.gradle.outputs.exit == '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

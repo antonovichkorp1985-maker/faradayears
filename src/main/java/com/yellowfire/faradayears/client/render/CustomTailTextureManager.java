@@ -33,8 +33,10 @@ public final class CustomTailTextureManager {
         @Override
         protected boolean removeEldestEntry(Map.Entry<UUID, Entry> eldest) {
             if (size() > MAX_CACHE) {
+                // Запись в TextureManager остаётся и будет заменена при повторном register
+                // того же пути; здесь достаточно освободить пиксельный буфер:
                 try {
-                    Minecraft.getInstance().getTextureManager().release(eldest.getValue().location);
+                    eldest.getValue().texture.close();
                 } catch (Exception ignored) {
                 }
                 return true;
