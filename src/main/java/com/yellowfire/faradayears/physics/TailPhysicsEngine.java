@@ -163,7 +163,8 @@ public class TailPhysicsEngine {
             int activeTails = superVolumetric ? 1 : Math.max(1, Math.min(MAX_TAILS, tailCount));
             state.activeTails = activeTails;
 
-            Vec3 centerDir = computeBackDirection(player, -0.75D);
+            // The first joint leaves the lower back horizontally; the chain's rest arc handles the gentle drape.
+            Vec3 centerDir = computeBackDirection(player, 0.0D);
 
             if (!state.initialized || teleported) {
                 for (int t = 0; t < MAX_TAILS; t++) {

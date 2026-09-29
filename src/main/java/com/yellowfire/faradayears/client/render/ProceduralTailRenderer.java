@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public class ProceduralTailRenderer {
     private static final ResourceLocation TAIL_TEXTURE = ResourceLocation.fromNamespaceAndPath("faradayears", "textures/entity/faraday_tail_solid.png");
-    private static final int SIDES = 8;
+    private static final int SIDES = 12;
     private static final int SUBDIVISIONS = 4;
 
     public static boolean IS_IN_GUI_PREVIEW = false;
@@ -174,10 +174,16 @@ public class ProceduralTailRenderer {
 
         Vec3[][] V = new Vec3[M][SIDES];
         for (int j = 0; j < M; j++) {
+            double alongTail = j / (double) (M - 1);
+            double furFadeIn = smoothstep(0.12D, 0.38D, alongTail);
+            double tipTuftFade = smoothstep(0.72D, 0.94D, alongTail);
             for (int i = 0; i < SIDES; i++) {
                 double angle = (Math.PI * 2.0D * i) / SIDES;
                 Vec3 radial = S[j].scale(Math.cos(angle)).add(U[j].scale(Math.sin(angle)));
-                V[j][i] = C[j].add(radial.scale(R[j]));
+                // A subtle broken-fur contour avoids the perfectly smooth rubber-tube silhouette.
+                double bodyTuft = 1.0D + 0.045D * furFadeIn * Math.cos(5.0D * angle + 0.35D);
+                double tipTuft = 1.0D + 0.075D * tipTuftFade * Math.cos(4.0D * angle + 0.55D);
+                V[j][i] = C[j].add(radial.scale(R[j] * bodyTuft * tipTuft));
             }
         }
 
@@ -245,9 +251,22 @@ public class ProceduralTailRenderer {
     private static double radiusFor(PlayerEarsTailData data, int segment, int activeSegments) {
         double t = activeSegments <= 1 ? 0.0D : segment / (double) (activeSegments - 1);
         double taper = Mth.clamp(data.getTailTaper(), 0.35D, 1.45D);
-        double profile = 0.31D * (1.0D - t * t * (1.0D - taper * 0.60D));
+        double taperFactor = (taper - 0.35D) / (1.45D - 0.35D);
+
+        // Fox-plume profile: a narrow root, a full soft brush through the middle,
+        // then a distinctly tapered colored tip instead of a uniform rounded tube.
+        double rootToPlume = smoothstep(0.0D, 0.20D, t);
+        double tipFade = smoothstep(0.64D, 1.0D, t);
+        double plumeRadius = Mth.lerp(rootToPlume, 0.105D, 0.325D);
+        double pointedTipRadius = Mth.lerp(taperFactor, 0.035D, 0.125D);
+        double profile = Mth.lerp(tipFade, plumeRadius, pointedTipRadius);
         profile *= data.getTailScaleX();
-        return Mth.clamp(profile, 0.095D, 0.38D);
+        return Mth.clamp(profile, 0.045D, 0.38D);
+    }
+
+    private static double smoothstep(double edge0, double edge1, double x) {
+        double t = Mth.clamp((x - edge0) / (edge1 - edge0), 0.0D, 1.0D);
+        return t * t * (3.0D - 2.0D * t);
     }
 
     private static int darken(int rgb, float factor) {

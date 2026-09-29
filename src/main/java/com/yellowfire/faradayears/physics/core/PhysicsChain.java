@@ -45,7 +45,8 @@ public class PhysicsChain {
         Vec3 p = root;
         for (int i = 0; i < count; i++) {
             double segLen = getSegmentLength(i, count, segmentLength);
-            p = p.add(dir.scale(segLen));
+            // Keep the exit segment horizontal, then blend into a lifted fox-tail arc.
+            p = p.add(restDirection(dir, i, count).scale(segLen));
             double taper = count <= 1 ? 0.0D : i / (double) (count - 1);
             PhysicsParticle particle = new PhysicsParticle(p, Math.max(0.09D, baseRadius * (1.0D - taper * 0.42D)));
             particle.mass = 1.0D + taper * 0.40D;
@@ -91,11 +92,9 @@ public class PhysicsChain {
                 else if (wagAxis == 1) lateralWag = upVector.scale(wagForce * distal);
                 else if (wagAxis == 2) lateralWag = sideVector.scale(wagForce * distal).add(upVector.scale(wagForce2 * distal));
             }
-            if (i == 0) {
-                p.applyForce(gravity.scale(0.08D));
-            } else {
-                p.applyForce(gravity.scale(1.0D + distal * 0.35D).add(lateralWag));
-            }
+            // Apply the same world gravity to every particle. Wag is an independent small force.
+            p.applyForce(gravity);
+            if (lateralWag.lengthSqr() > 0.0D) p.applyForce(lateralWag);
             p.verlet(damping);
         }
 
@@ -113,18 +112,18 @@ public class PhysicsChain {
                 double segWagRad = Math.toRadians(wagAmp * Math.sin(segTime));
                 double segWagRad2 = Math.toRadians(wagAmp * Math.cos(segTime * 0.8D));
 
-                Vec3 jointDir = baseDir;
+                Vec3 jointDir = restDirection(baseDir, i, particles.size());
                 if (wagAxis != 3 && wagAmp > 0.05f) {
                     if (wagAxis == 0) {
                         double cos = Math.cos(segWagRad * (0.35D + distal * 0.45D));
                         double sin = Math.sin(segWagRad * (0.35D + distal * 0.45D));
-                        jointDir = new Vec3(baseDir.x * cos - baseDir.z * sin, baseDir.y, baseDir.x * sin + baseDir.z * cos).normalize();
+                        jointDir = new Vec3(jointDir.x * cos - jointDir.z * sin, jointDir.y, jointDir.x * sin + jointDir.z * cos).normalize();
                     } else if (wagAxis == 1) {
-                        jointDir = baseDir.add(upVector.scale(Math.sin(segTime) * (wagAmp * 0.008D))).normalize();
+                        jointDir = jointDir.add(upVector.scale(Math.sin(segTime) * (wagAmp * 0.008D))).normalize();
                     } else if (wagAxis == 2) {
                         double cos = Math.cos(segWagRad * (0.25D + distal * 0.35D));
                         double sin = Math.sin(segWagRad * (0.25D + distal * 0.35D));
-                        Vec3 horiz = new Vec3(baseDir.x * cos - baseDir.z * sin, baseDir.y, baseDir.x * sin + baseDir.z * cos);
+                        Vec3 horiz = new Vec3(jointDir.x * cos - jointDir.z * sin, jointDir.y, jointDir.x * sin + jointDir.z * cos);
                         jointDir = horiz.add(upVector.scale(Math.sin(segWagRad2) * (wagAmp * 0.006D))).normalize();
                     }
                 }
@@ -143,18 +142,18 @@ public class PhysicsChain {
                 }
                 if (crouching) groundFade = Math.min(groundFade, 0.25D);
 
+                Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
                 if (i == 0) {
-                    Vec3 baseTarget = root.add(jointDir.scale(segLen));
-                    double k0 = baseStiffness * (0.25D + 0.75D * groundFade);
-                    p.position = lerp(projected, baseTarget, k0);
-                } else if (i < 6) {
-                    // Первые 6 микросуставов у основания мягко удерживают плавное анатомическое скругление:
-                    Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                    double kSpan = (0.50D - i * 0.06D) * baseStiffness;
-                    double effectiveK = kSpan * (0.15D + 0.85D * groundFade);
-                    p.position = lerp(projected, arcTarget, effectiveK);
+                    // Exact horizontal spine exit; preserve a strong root even near terrain.
+                    double k0 = baseStiffness * (0.75D + 0.25D * groundFade);
+                    p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
                 } else {
-                    p.position = projected;
+                    // Hold a light lifted arc over the whole chain. Near-ground particles
+                    // get more support instead of being encouraged to settle onto the floor.
+                    double restWeight = baseStiffness * Mth.lerp(distal, 0.52D, 0.30D);
+                    restWeight *= 1.0D + 0.35D * (1.0D - groundFade);
+                    if (crouching) restWeight *= 0.90D;
+                    p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
                 }
 
                 p.position = collideOwnerCylinder(owner, p.position, p.radius, i);
@@ -168,7 +167,29 @@ public class PhysicsChain {
             }
         }
 
-        settleDistalNearGround(level, owner);
+    }
+
+    /**
+     * A low, supported fox-tail arc: the first segment exits horizontally, the middle
+     * rises gently, and only the last part turns slightly down. This counters ground-drag
+     * without adding vertical forces or changing the gravity value.
+     */
+    private Vec3 restDirection(Vec3 horizontalBack, int index, int count) {
+        Vec3 back = new Vec3(horizontalBack.x, 0.0D, horizontalBack.z);
+        if (back.lengthSqr() < 1.0E-8D) back = new Vec3(0.0D, 0.0D, -1.0D);
+        back = back.normalize();
+        if (index <= 0 || count <= 1) return back;
+
+        double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
+        double liftAngle = 0.34D * Math.sin(Math.PI * t);
+        double tipDrop = 0.18D * smoothstep(0.72D, 1.0D, t);
+        double angle = liftAngle - tipDrop;
+        return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
+    }
+
+    private double smoothstep(double edge0, double edge1, double x) {
+        double t = Mth.clamp((x - edge0) / (edge1 - edge0), 0.0D, 1.0D);
+        return t * t * (3.0D - 2.0D * t);
     }
 
     private Vec3 lerp(Vec3 a, Vec3 b, double t) {
@@ -191,26 +212,6 @@ public class PhysicsChain {
             return point.add((dx / dist) * push, 0, (dz / dist) * push);
         }
         return point;
-    }
-
-    private void settleDistalNearGround(Level level, Entity owner) {
-        if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
-        for (int i = 1; i < particles.size(); i++) {
-            PhysicsParticle p = particles.get(i);
-            double groundY = collider.findGroundTopBelow(level, p.position, p.radius, 1.25D);
-            if (Double.isNaN(groundY)) continue;
-            double gap = (p.position.y - p.radius) - groundY;
-            if (gap > 0.001D && gap < 0.45D) {
-                Vec3 correction = new Vec3(0, -gap * 0.95D, 0);
-                p.position = p.position.add(correction);
-                PhysicsWorldCollider.CollisionResult result = collider.collideSphere(level, owner, p.position, p.radius);
-                p.position = result.position;
-                p.touchingGround = p.touchingGround || result.ground;
-                if (p.touchingGround) {
-                    p.slideOnGround(0.80D);
-                }
-            }
-        }
     }
 
     public Vec3 getPoint(int index) {
