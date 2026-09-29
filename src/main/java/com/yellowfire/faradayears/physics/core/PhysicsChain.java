@@ -335,7 +335,7 @@ public class PhysicsChain {
         Vec3 forward = new Vec3(-back.x, 0.0D, -back.z);
         Vec3 right = new Vec3(-back.z, 0.0D, back.x);
 
-        boolean sleeping = owner.isSleeping();
+        boolean sleeping = owner.getPose() == net.minecraft.world.entity.Pose.SLEEPING;
         double ahead = sleeping ? 0.04D : 0.17D;
         double side = sleeping ? 0.05D : 0.10D;
         double baseR = sleeping ? 0.33D : 0.46D;
