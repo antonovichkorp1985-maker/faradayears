@@ -49,7 +49,15 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
         PlayerEarsTailData data = ModAttachments.get(player);
         {
-            ResourceLocation texture = DEFAULT_TEXTURE;
+            // ★ 1.2.0: единый кастомный лист 64x64 (если включён) вместо стандартной текстуры:
+            boolean customTex = CustomTailTextureManager.hasCustomTexture(data);
+            ResourceLocation texture = customTex
+                    ? CustomTailTextureManager.getTexture(player.getUUID(), data.getCustomTextureBase64())
+                    : DEFAULT_TEXTURE;
+            if (texture == null) {
+                customTex = false;
+                texture = DEFAULT_TEXTURE;
+            }
             VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
 
             TailPhysicsEngine.INSTANCE.onRenderInterpolate(player, partialTick);

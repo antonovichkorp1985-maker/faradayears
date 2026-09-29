@@ -163,10 +163,15 @@ public class TailPhysicsEngine {
             int activeTails = superVolumetric ? 1 : Math.max(1, Math.min(MAX_TAILS, tailCount));
             state.activeTails = activeTails;
 
-            Vec3 centerDir = computeBackDirection(player, -0.75D);
+            // ★ 1.2.0: режим физики хвоста (0=Классика, 1=Баланс, 2=Поднятая дуга):
+            int physicsMode = Mth.clamp(data.getTailPhysicsMode(), PhysicsChain.MODE_CLASSIC, PhysicsChain.MODE_LIFTED);
+            double backPitch = physicsMode == PhysicsChain.MODE_LIFTED ? 0.0D
+                    : (physicsMode == PhysicsChain.MODE_BALANCED ? -0.35D : -0.75D);
+            Vec3 centerDir = computeBackDirection(player, backPitch);
 
             if (!state.initialized || teleported) {
                 for (int t = 0; t < MAX_TAILS; t++) {
+                    state.tails[t].chain.physicsMode = physicsMode;
                     double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, data.getTailFanSpread(), false);
                     Vec3 baseDir = centerDir;
                     if (fanRad != 0.0D && !superVolumetric) {
@@ -196,6 +201,7 @@ public class TailPhysicsEngine {
                     baseDir = new Vec3(centerDir.x * cos - centerDir.z * sin, centerDir.y, centerDir.x * sin + centerDir.z * cos).normalize();
                 }
 
+                inst.chain.physicsMode = physicsMode;
                 inst.chain.ensureSize(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
                 inst.chain.damping = player.isInWaterOrBubble() ? 0.60D : 0.845D;
                 inst.chain.iterations = 11;
