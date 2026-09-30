@@ -159,7 +159,9 @@ public class PhysicsChain {
             p.touchingGround = false;
             double distal = (particles.size() <= 1) ? 1.0D : i / (double) (particles.size() - 1);
             Vec3 lateralWag = Vec3.ZERO;
-            boolean wagActive = (wagAxis != 3 && wagAmp > 0.05f && i > 0);
+            // В реалистичном режиме старый синус осей не используется: wagAxis теперь лишь
+            // переключатель намеренного поведения (3=выкл., остальные legacy=реалистичное).
+            boolean wagActive = (physicsMode != MODE_REALISTIC && wagAxis != 3 && wagAmp > 0.05f && i > 0);
             if (wagActive) {
                 double segTime = time - distal * 1.5D; // Бегущая волна виляния по длине хвоста
                 double wagForce = Math.sin(segTime) * (wagAmp * 0.0075D);
@@ -175,21 +177,19 @@ public class PhysicsChain {
             if (physicsMode == MODE_REALISTIC && i > 0) {
                 double tick = (owner != null ? owner.tickCount : 0.0D);
                 double idleScale = (1.0D - sitBlend) * (1.0D - moveBlend) * (wagActive ? 0.35D : 1.0D);
-                double fx = 0.0D;
-                // 1) ленивое «дыхание» хвоста — медленная волна от основания к кончику:
-                fx += Math.sin(tick * 0.045D + swayPhase - distal * 2.2D) * 0.0028D * idleScale;
-                // 2) редкий «нервный тик» кончика (кошка чем-то заинтересована/раздражена):
-                if (flickTick > 0) {
-                    double flickEnv = Math.sin(flickTick * 0.85D) * (flickTick / 12.0D);
-                    fx += flickEnv * 0.012D * smoothstep(0.55D, 1.0D, distal) * idleScale;
-                }
-                // 3) походочное покачивание в такт шагам (фаза набирается дистанцией, не временем):
-                fx += Math.sin(gaitPhase + swayPhase - distal * 1.8D) * 0.0032D * moveBlend * (0.35D + 0.65D * tension);
-                // 4) «руль»: при повороте хвост инерционно хлещет ПРОТИВ поворота — как у гепарда:
-                fx += turnLash;
-                // 5) испуг: быстрый хлёст из стороны в сторону (кошка/лиса при страхе):
-                if (scareBlend > 0.01D) {
-                    fx += Math.sin(tick * 0.75D + distal * 1.5D) * 0.008D * scareBlend;
+                // Физический противовес остаётся даже при выключенной мимике.
+                double fx = turnLash;
+                if (wagAxis != 3) {
+                    fx += Math.sin(tick * 0.045D + swayPhase - distal * 2.2D) * 0.0012D * idleScale;
+                    if (flickTick > 0) {
+                        double flickEnv = Math.sin(flickTick * 0.85D) * (flickTick / 12.0D);
+                        fx += flickEnv * 0.006D * smoothstep(0.55D, 1.0D, distal) * idleScale;
+                    }
+                    // Основное движение при ходьбе создаёт инерция; мимика лишь дополняет её.
+                    fx += Math.sin(gaitPhase + swayPhase - distal * 1.8D) * 0.0008D * moveBlend * tension;
+                    if (scareBlend > 0.01D) {
+                        fx += Math.sin(tick * 0.75D + distal * 1.5D) * 0.006D * scareBlend;
+                    }
                 }
                 lateralWag = lateralWag.add(sideVector.scale(fx * distal));
             }

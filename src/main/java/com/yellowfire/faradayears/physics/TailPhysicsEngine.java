@@ -101,7 +101,9 @@ public class TailPhysicsEngine {
         public double sneakBlend = 0.0D;     // 0..1 крадётся
         public double gaitPhase = 0.0D;      // фаза шага (набегает пройденной дистанцией)
         public double turnLash = 0.0D;       // «руль»: хлыст хвоста против поворота
-        public double scareBlend = 0.0D;     // испуг (урон) → распушение + хлёст
+        public double scareBlend = 0.0D;      // испуг (урон) → распушение + хлёст
+        /** Мышечно поддерживаемое раскрытие фантастического веера (1 = настройка GUI). */
+        public double fanSpreadScale = 1.0D;
 
         public PlayerPhysicsData() {
             for (int i = 0; i < MAX_TAILS; i++) {
@@ -191,17 +193,29 @@ public class TailPhysicsEngine {
             // ★ 1.3.5 ЗВЕРОЛЮД-ГИБРИД (выбор владельца): лёгкое приседание (Shift) —
             // контрбаланс капуцина (хвост назад-вверх против наклона вперёд, Massaro 2016);
             // глубокая крадучись (ползание, Pose.SWIMMING на земле) — кошачий stalking:
-            boolean crawling = player.getPose() == Pose.SWIMMING && !player.isInWaterOrBubble();
-            boolean airborne = !player.onGround();
+            boolean swimming = player.isInWaterOrBubble();
+            boolean crawling = player.getPose() == Pose.SWIMMING && !swimming;
+            boolean airborne = !player.onGround() && !swimming;
             boolean sprinting = (player.isSprinting() && hSpeed > 0.15D) || hSpeed > 0.27D;
             boolean walking = hSpeed > 0.045D;
+            boolean raining = player.level().isRainingAt(player.blockPosition());
+
+            // Длинному хвосту требуется больший поддерживающий момент: пять длинных
+            // пользовательских секций не должны вести себя как та же мышца на коротком хвосте.
+            int requestedSegments = Math.max(1, Math.min(MAX_USER_SEGMENTS, data.getTailSegments()));
+            double requestedBaseLength = Mth.clamp(data.getTailSegmentLength() / 16.0D * 1.22D, 0.28D, 0.66D);
+            double totalTailLength = requestedSegments * requestedBaseLength;
+            double lengthSupport = Mth.clamp((totalTailLength - 1.35D) / 1.75D, 0.0D, 1.0D);
 
             double carryTarget, curlTarget, tensionTarget;
             if (state.sitting) {
                 carryTarget = -1.20D; curlTarget = 0.20D; tensionTarget = 0.50D;
+            } else if (swimming) {
+                // В воде хвост вытягивается вдоль тела; отдельное водное демпфирование будет
+                // добавлено в solver позднее, здесь задаётся только мышечное намерение.
+                carryTarget = -0.28D; curlTarget = 0.02D; tensionTarget = 0.58D;
             } else if (crawling) {
-                // Глубокая крадучись (ползание): кошка на охоте — прижат к земле, кончик волочится:
-                carryTarget = -1.25D; curlTarget = 0.15D; tensionTarget = 0.10D;
+                carryTarget = -1.05D; curlTarget = 0.12D; tensionTarget = 0.20D;
             } else if (airborne) {
                 carryTarget = -0.50D; curlTarget = 0.05D; tensionTarget = 0.72D;
             } else if (sneaking) {
@@ -210,13 +224,20 @@ public class TailPhysicsEngine {
             } else if (sprinting) {
                 carryTarget = -0.08D; curlTarget = 0.00D; tensionTarget = 0.85D;
             } else if (walking) {
-                carryTarget = -0.40D; curlTarget = 0.12D; tensionTarget = 0.42D;
+                carryTarget = -0.38D + 0.12D * lengthSupport;
+                curlTarget = 0.08D; tensionTarget = 0.44D + 0.14D * lengthSupport;
             } else {
-                // ★ 1.3.4: покой = настоящее свисание (−80°): складывается сразу за крупом,
-                // а не «холмом» с постепенным набором угла:
-                carryTarget = -1.40D; curlTarget = 0.35D; tensionTarget = 0.30D;
+                // В покое касается преимущественно кончик. Чем хвост длиннее, тем сильнее
+                // мышцы основания несут его назад, вместо укладки половины длины на землю.
+                carryTarget = -0.78D + 0.20D * lengthSupport;
+                curlTarget = 0.22D; tensionTarget = 0.38D + 0.18D * lengthSupport;
+                if (raining) {
+                    // Мокрый мех спокойнее и чуть ниже, но дождь не запускает отдельное махание.
+                    carryTarget -= 0.08D;
+                    tensionTarget += 0.04D;
+                }
             }
-            state.carryAngle += (carryTarget - state.carryAngle) * 0.09D;
+            state.carryAngle += (carryTarget - state.carryAngle) * 0.075D;
             state.tipCurl += (curlTarget - state.tipCurl) * 0.09D;
             state.tension += (tensionTarget - state.tension) * 0.10D;
             state.moveBlend += ((walking || sprinting ? 1.0D : 0.0D) - state.moveBlend) * 0.12D;
@@ -235,7 +256,21 @@ public class TailPhysicsEngine {
                 if (state.scareBlend < 0.01D) state.scareBlend = 0.0D;
             }
 
-            int userSegments = Math.max(1, Math.min(MAX_USER_SEGMENTS, data.getTailSegments()));
+            // Фантастическая многовостость: это проектное допущение, не биологический факт.
+            // Мышечный root каждого хвоста удерживает свой локальный yaw, а поза плавно
+            // сужает или раскрывает желаемый веер.
+            double fanTarget;
+            if (state.scareBlend > 0.20D) fanTarget = 1.18D;
+            else if (sprinting) fanTarget = 0.58D;
+            else if (swimming) fanTarget = 0.50D;
+            else if (crawling) fanTarget = 0.62D;
+            else if (sneaking) fanTarget = 0.78D;
+            else if (state.sitting) fanTarget = 0.86D;
+            else if (walking) fanTarget = 0.90D;
+            else fanTarget = 1.0D;
+            state.fanSpreadScale += (fanTarget - state.fanSpreadScale) * 0.08D;
+
+            int userSegments = requestedSegments;
             int activePhysicalSegments = userSegments * 3;
             double baseLength = Mth.clamp(data.getTailSegmentLength() / 16.0D * 1.22D, 0.28D, 0.66D);
             double segmentLength = baseLength / 3.0D;
@@ -255,7 +290,7 @@ public class TailPhysicsEngine {
             if (!state.initialized || teleported) {
                 for (int t = 0; t < MAX_TAILS; t++) {
                     state.tails[t].chain.physicsMode = physicsMode;
-                    double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, data.getTailFanSpread(), false);
+                    double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, (float) Math.min(175.0D, data.getTailFanSpread() * state.fanSpreadScale), false);
                     Vec3 baseDir = centerDir;
                     if (fanRad != 0.0D && !superVolumetric) {
                         double cos = Math.cos(fanRad);
@@ -276,7 +311,7 @@ public class TailPhysicsEngine {
 
             for (int t = 0; t < activeTails; t++) {
                 TailChainInstance inst = state.tails[t];
-                double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, data.getTailFanSpread(), false);
+                double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, (float) Math.min(175.0D, data.getTailFanSpread() * state.fanSpreadScale), false);
                 Vec3 baseDir = centerDir;
                 if (fanRad != 0.0D && !superVolumetric) {
                     double cos = Math.cos(fanRad);

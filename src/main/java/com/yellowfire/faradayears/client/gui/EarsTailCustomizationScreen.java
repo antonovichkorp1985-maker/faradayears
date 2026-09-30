@@ -131,16 +131,19 @@ public class EarsTailCustomizationScreen extends Screen {
                 localData.setTailCount(counts[nextIdx]);
                 b.setMessage(Component.translatable("gui.faradayears.tail.count", Component.translatable(getTailCountKey(localData.getTailCount()))));
                 applyLiveUpdate();
+                init(); // показать/скрыть настройки веера
             }).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
 
-            // 1.4.0: два понятных режима — свободная классика и скелетно-мышечный хвост.
+            // Два понятных режима — свободная классика и скелетно-мышечный хвост.
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))), b -> {
                 localData.setTailPhysicsMode((localData.getTailPhysicsMode() + 1) % 2);
                 b.setMessage(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
 
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 60, btnWidth, 18, "slider.faradayears.tail_fan_spread", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
+            if (localData.getTailCount() != 1) {
+                addRenderableWidget(new CustomSlider(panelLeft, topPos + 60, btnWidth, 18, "slider.faradayears.tail_fan_spread", 20.0f, 160.0f, localData.getTailFanSpread(), val -> { localData.setTailFanSpread(val); applyLiveUpdate(); }));
+            }
 
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.segments", localData.getTailSegments(), Component.translatable(getSegmentsDescKey(localData.getTailSegments()))), b -> {
                 localData.setTailSegments(localData.getTailSegments() % 6 + 1);
@@ -153,19 +156,19 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(new CustomSlider(panelLeft, topPos + 140, btnWidth, 18, "slider.faradayears.tail_scale_x", 0.5f, 2.5f, localData.getTailScaleX(), val -> { localData.setTailScaleX(val); applyLiveUpdate(); }));
             addRenderableWidget(new CustomSlider(panelLeft, topPos + 160, btnWidth, 18, "slider.faradayears.tail_rot_x", -16.0f, 16.0f, localData.getTailRotX(), val -> { localData.setTailRotX(val); applyLiveUpdate(); }));
 
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.wag", Component.translatable(getWagAxisKey(localData.getTailWagAxis()))), b -> {
-                localData.setTailWagAxis((localData.getTailWagAxis() + 1) % 4);
-                b.setMessage(Component.translatable("gui.faradayears.wag", Component.translatable(getWagAxisKey(localData.getTailWagAxis()))));
+            // Старая процедурная ось/амплитуда/скорость удалены из GUI. Значение 3 означает
+            // отсутствие намеренных жестов; 0 — автоматические реалистичные реакции.
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.behavior", Component.translatable(getTailBehaviorKey(localData.getTailWagAxis()))), b -> {
+                localData.setTailWagAxis(localData.getTailWagAxis() == 3 ? 0 : 3);
+                b.setMessage(Component.translatable("gui.faradayears.behavior", Component.translatable(getTailBehaviorKey(localData.getTailWagAxis()))));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 180, btnWidth, 18).build());
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 200, btnWidth, 18, "slider.faradayears.wag_amplitude", 0.0f, 45.0f, localData.getTailWagAmplitude(), val -> { localData.setTailWagAmplitude(val); applyLiveUpdate(); }));
-            addRenderableWidget(new CustomSlider(panelLeft, topPos + 220, btnWidth, 18, "slider.faradayears.wag_speed", 0.5f, 5.0f, localData.getTailWagSpeed(), val -> { localData.setTailWagSpeed(val); applyLiveUpdate(); }));
 
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.reset"), b -> {
                 localData.resetTailOnly();
                 applyLiveUpdate();
                 init();
-            }).bounds(panelLeft, topPos + 242, btnWidth, 18).build());
+            }).bounds(panelLeft, topPos + 202, btnWidth, 18).build());
         } else if (activeTab == 3) {
             // ★ 1.2.0: тумблер применения кастомной текстуры (единый лист 64x64):
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.toggle", onOff(localData.isCustomTextureEnabled())), b -> {
@@ -298,15 +301,9 @@ public class EarsTailCustomizationScreen extends Screen {
         }
     }
 
-    /** ★ 1.3.1: возвращает ключ локализации оси махания. */
-    private String getWagAxisKey(int axis) {
-        return switch (axis) {
-            case 0 -> "gui.faradayears.wag.0";
-            case 1 -> "gui.faradayears.wag.1";
-            case 2 -> "gui.faradayears.wag.2";
-            case 3 -> "gui.faradayears.wag.3";
-            default -> "gui.faradayears.wag.0";
-        };
+    /** Значения старых осей 0..2 мигрируют в единое реалистичное поведение; 3 = выкл. */
+    private String getTailBehaviorKey(int legacyAxis) {
+        return legacyAxis == 3 ? "gui.faradayears.behavior.off" : "gui.faradayears.behavior.realistic";
     }
 
     /** ★ 1.3.1: ВКЛ/ВЫКЛ через lang-файлы. */
