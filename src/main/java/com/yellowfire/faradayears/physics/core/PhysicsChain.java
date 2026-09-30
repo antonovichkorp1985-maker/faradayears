@@ -31,6 +31,10 @@ public class PhysicsChain {
     public static final int MODE_REALISTIC = 1;
     public static final int MODE_LIFTED = 2;
 
+    /** ★ 1.3.3: угол выхода хвоста из поясницы (рад; вниз < 0) — продолжение линии крестца.
+     *  Основание НЕ горизонтально и НЕ сразу в угле несения: хвост «вырастает» из спины. */
+    public static final double EXIT_ANGLE = -0.40D;
+
     public final List<PhysicsParticle> particles = new ArrayList<>();
 
     public double segmentLength = 0.42D;
@@ -253,21 +257,15 @@ public class PhysicsChain {
                         p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
                     }
                 } else if (physicsMode == MODE_REALISTIC) {
-                    // ★ 1.3.2 РЕАЛИСТИЧНАЯ (кошачья/лисяя): форму задаёт контекстная поза
-                    //   (carryAngle/tipCurl в restDirection), а «тонус» (tension) решает,
-                    //   насколько мышцы держат эту позу: в покое хвост вяло висит под своей
-                    //   тяжестью, в спринте — несётся прямым вымпелом позади игрока.
+                    // ★ 1.3.3 РЕАЛИСТИЧНАЯ (кошачья/лисяя): кривая покоя непрерывна
+                    //   (выход из поясницы → несение → кончик, см. restDirection),
+                    //   жёсткость плавно спадает от основания к кончику — без шва на i=6:
                     if (i == 0) {
-                        double k0 = baseStiffness * (0.22D + 0.60D * tension) * (0.45D + 0.55D * groundFade);
+                        double k0 = baseStiffness * (0.24D + 0.55D * tension) * (0.45D + 0.55D * groundFade);
                         p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
-                    } else if (i < 6) {
-                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double kSpan = (0.30D - i * 0.045D) * baseStiffness * (0.55D + 0.75D * tension);
-                        double effectiveK = kSpan * (0.25D + 0.75D * groundFade);
-                        p.position = lerp(projected, arcTarget, effectiveK);
                     } else {
                         Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double restWeight = baseStiffness * Mth.lerp(distal, 0.20D, 0.10D) * (0.45D + 1.10D * tension);
+                        double restWeight = baseStiffness * Mth.lerp(distal, 0.30D, 0.10D) * (0.45D + 1.10D * tension);
                         restWeight *= 1.0D + 0.10D * (1.0D - groundFade);
                         if (crouching) restWeight *= 0.90D;
                         p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.02D, 0.30D));
@@ -365,17 +363,23 @@ public class PhysicsChain {
         Vec3 back = new Vec3(horizontalBack.x, 0.0D, horizontalBack.z);
         if (back.lengthSqr() < 1.0E-8D) back = new Vec3(0.0D, 0.0D, -1.0D);
         back = back.normalize();
-        if (index <= 0 || count <= 1) return back;
+        if (index <= 0 || count <= 1) {
+            // ★ 1.3.3: у реалистичного хвоста основание выходит вдоль линии низа спины
+            // (продолжение крестца), а НЕ горизонтально — иначе у корня торчит «бугорок»:
+            if (physicsMode == MODE_REALISTIC) return dirFromAngle(back, EXIT_ANGLE);
+            return back; // Поднятая дуга: горизонтальный выход — её дизайн (1.0.1)
+        }
 
         double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
 
         if (physicsMode == MODE_REALISTIC) {
-            // ★ 1.3.2: контекстное несение хвоста (цели ставит TailPhysicsEngine по состоянию игрока):
-            //   в покое хвост СВИСАЕТ ВНИЗ — как у стоящей лисы («достаёт до земли»);
-            //   на рыси — опущен и вытянут назад; в спринте — почти горизонтальный вымпел-противовес;
-            //   на охоте (крадучись) — прижат к земле; кончик в покое мягко подкручен к пятке.
-            double angle = carryAngle + tipCurl * smoothstep(0.55D, 1.0D, t);
-            return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
+            // ★ 1.3.3 ОРГАНИЧНОЕ НЕСЕНИЕ: кривая покоя непрерывна по всей длине:
+            //   выход из поясницы (~-23°, продолжение тела) → плавный набор угла несения
+            //   к середине хвоста → подкрученный кончик в покое. Никаких «ступенек»
+            //   у корня — хвост выглядит выросшим, а не надетым.
+            double carriage = carryAngle + tipCurl * smoothstep(0.55D, 1.0D, t);
+            double blend = smoothstep(0.0D, 0.45D, t); // к ~45% длины выходим на несение
+            return dirFromAngle(back, EXIT_ANGLE + (carriage - EXIT_ANGLE) * blend);
         }
 
         boolean lifted = (physicsMode == MODE_LIFTED);
@@ -442,6 +446,11 @@ public class PhysicsChain {
     private double smoothstep(double edge0, double edge1, double x) {
         double t = Mth.clamp((x - edge0) / (edge1 - edge0), 0.0D, 1.0D);
         return t * t * (3.0D - 2.0D * t);
+    }
+
+    /** ★ 1.3.3: направление в плоскости спины по углу от горизонтали (рад; вниз < 0). */
+    private Vec3 dirFromAngle(Vec3 back, double angle) {
+        return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
     }
 
     private Vec3 lerp(Vec3 a, Vec3 b, double t) {

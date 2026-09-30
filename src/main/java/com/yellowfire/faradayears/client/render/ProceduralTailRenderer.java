@@ -147,7 +147,10 @@ public class ProceduralTailRenderer {
             Vec3 p3 = (s + 2 < N) ? P[s + 2] : p2.add(p2.subtract(p1));
 
             Vec3 rawC = catmullRom(p0, p1, p2, p3, t);
-            if (j > 0 && j < M * 0.35D && rawC.y > C[0].y) {
+            // ★ 1.3.3: старый «анти-бугорок» (принудительное выпрямление первых 35% хвоста)
+            // оставлен только для Классики/Поднятой дуги — у реалистичного режима кривая
+            // покоя теперь непрерывна от крестца, и хак лишь портил плавность переходов:
+            if (data.getTailPhysicsMode() != 1 && j > 0 && j < M * 0.35D && rawC.y > C[0].y) {
                 rawC = new Vec3(rawC.x, C[Math.max(0, j - 1)].y, rawC.z);
             }
             C[j] = rawC;
