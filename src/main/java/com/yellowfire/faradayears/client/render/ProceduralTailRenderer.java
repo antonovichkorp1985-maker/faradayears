@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.yellowfire.faradayears.capability.PlayerEarsTailData;
 import com.yellowfire.faradayears.physics.TailPhysicsEngine;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -18,10 +19,13 @@ import net.minecraft.world.phys.Vec3;
  * 1) Samples tail body fur from `Y = 32..47` (`v = 0.515..0.718`) and tail tip fur from `Y = 48..63` (`v = 0.765..0.968`)
  *    of our unified 64x64 UV layout (`faraday_custom.png / faraday_ears_tail.png`), allowing custom skins to paint ears & tail on 1 sheet!
  * 2) Centered GUI 3D preview (`IS_IN_GUI_PREVIEW`) and zero hump spline (`p0 colinear`).
+ *
+ * ★ 1.2.0: если у игрока включена кастомная текстура — рендер идёт по ней (без цветового
+ * тинта), иначе по-прежнему `faraday_tail_solid.png` с заливкой Primary/Secondary цветами.
  */
 public class ProceduralTailRenderer {
     private static final ResourceLocation TAIL_TEXTURE = ResourceLocation.fromNamespaceAndPath("faradayears", "textures/entity/faraday_tail_solid.png");
-    private static final int SIDES = 8;
+    private static final int SIDES = 12;
     private static final int SUBDIVISIONS = 4;
 
     public static boolean IS_IN_GUI_PREVIEW = false;
@@ -34,7 +38,15 @@ public class ProceduralTailRenderer {
                               float partialTick) {
         if (physics == null || physics.smoothRoot == null || physics.tails[0].smoothPoints[0] == null) return;
 
-        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TAIL_TEXTURE));
+        boolean customTex = CustomTailTextureManager.hasCustomTexture(data);
+        ResourceLocation texture = customTex
+                ? CustomTailTextureManager.getTexture(player.getUUID(), data.getCustomTextureBase64())
+                : TAIL_TEXTURE;
+        if (texture == null) {
+            customTex = false;
+            texture = TAIL_TEXTURE;
+        }
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
 
         double px = Mth.lerp(partialTick, player.xo, player.getX());
         double py = Mth.lerp(partialTick, player.yo, player.getY());
@@ -58,28 +70,43 @@ public class ProceduralTailRenderer {
         boolean superVolumetric = (data.getTailCount() == 10);
         int activeTails = superVolumetric ? 4 : Math.max(1, Math.min(TailPhysicsEngine.MAX_TAILS, data.getTailCount()));
 
+        // ★ 1.3.2: испуг — «шерсть дыбом»: хвост временно распушается (пилоэрекция у кошек,
+        // режим «Реалистичная»): радиус трубки ×1.3 на пике испуга:
+        double puffScale = 1.0D + (data.getTailPhysicsMode() == 1 ? 0.30D * physics.scareBlend : 0.0D);
+
+        // ★ 1.3.0 ОПТИМИЗАЦИЯ (LOD): чем дальше игрок от камеры, тем грубее трубка хвоста —
+        // вблизи 12 сторон × 4 среза, вдали 8×3 и 6×2. Экономит и вершины, и мусор для GC:
+        double camDistSq = player.distanceToSqr(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
+        boolean veryFar = camDistSq > 144.0D * 144.0D;
+        boolean midFar = camDistSq > 64.0D * 64.0D;
+        int sides = (IS_IN_GUI_PREVIEW || !midFar) ? SIDES : (veryFar ? 6 : 8);
+        int subdivisions = (IS_IN_GUI_PREVIEW || !midFar) ? SUBDIVISIONS : (veryFar ? 2 : 3);
+
         double bodyYawRad = Math.toRadians(player.yBodyRot);
         Vec3 right = new Vec3(Math.cos(bodyYawRad), 0, Math.sin(bodyYawRad));
         Vec3 spineBaseDir = new Vec3(Math.sin(bodyYawRad), 0, -Math.cos(bodyYawRad)).normalize();
 
         if (superVolumetric) {
             renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                    0.0D, Vec3.ZERO, 1.28D, true, right, spineBaseDir);
-            for (int t = 0; t < 4; t++) {
-                double fanAngleRad = getFanAngleRad(t, 4, data.getTailFanSpread(), true);
-                Vec3 layerOffset = getLayerOffset(t, right, true);
-                renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                        fanAngleRad, layerOffset, 0.72D, false, right, spineBaseDir);
+                    0.0D, Vec3.ZERO, 1.28D * puffScale, true, right, spineBaseDir, customTex, sides, subdivisions);
+            // ★ 1.3.0: 4 дополнительных объёмных слоя рендерим только вблизи (дальше их не видно):
+            if (IS_IN_GUI_PREVIEW || camDistSq < 48.0D * 48.0D) {
+                for (int t = 0; t < 4; t++) {
+                    double fanAngleRad = getFanAngleRad(t, 4, data.getTailFanSpread(), true);
+                    Vec3 layerOffset = getLayerOffset(t, right, true);
+                    renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
+                            fanAngleRad, layerOffset, 0.72D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
+                }
             }
         } else if (activeTails == 1) {
             renderContinuousSplineLayer(poseStack, consumer, packedLight, physics.tails[0], physics.smoothRoot, data, activeSegments,
-                    0.0D, Vec3.ZERO, 1.0D, false, right, spineBaseDir);
+                    0.0D, Vec3.ZERO, 1.0D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
         } else {
             for (int t = 0; t < activeTails; t++) {
                 TailPhysicsEngine.TailChainInstance inst = physics.tails[t];
                 if (inst.smoothPoints[0] == null) continue;
                 renderContinuousSplineLayer(poseStack, consumer, packedLight, inst, physics.smoothRoot, data, activeSegments,
-                        0.0D, Vec3.ZERO, 1.0D, false, right, spineBaseDir);
+                        0.0D, Vec3.ZERO, 1.0D * puffScale, false, right, spineBaseDir, customTex, sides, subdivisions);
             }
         }
 
@@ -89,7 +116,8 @@ public class ProceduralTailRenderer {
     private static void renderContinuousSplineLayer(PoseStack poseStack, VertexConsumer consumer, int packedLight,
                                                     TailPhysicsEngine.TailChainInstance inst, Vec3 smoothRoot, PlayerEarsTailData data,
                                                     int activeSegments, double fanAngleRad, Vec3 layerOffset,
-                                                    double radiusMultiplier, boolean core, Vec3 shoulderRight, Vec3 spineBaseDir) {
+                                                    double radiusMultiplier, boolean core, Vec3 shoulderRight, Vec3 spineBaseDir,
+                                                    boolean customTex, int sides, int subdivisions) {
         int N = activeSegments + 1;
         Vec3[] P = new Vec3[N];
         P[0] = transformTailPoint(smoothRoot, smoothRoot, 0.0D, layerOffset.scale(0.35D));
@@ -100,14 +128,14 @@ public class ProceduralTailRenderer {
             if (P[s + 1] == null) P[s + 1] = P[s];
         }
 
-        int M = activeSegments * SUBDIVISIONS + 1;
+        int M = activeSegments * subdivisions + 1;
         Vec3[] C = new Vec3[M];
         double[] R = new double[M];
         int[] color = new int[M];
 
         for (int j = 0; j < M; j++) {
-            int s = Math.min(activeSegments - 1, j / SUBDIVISIONS);
-            double t = (j % SUBDIVISIONS) / (double) SUBDIVISIONS;
+            int s = Math.min(activeSegments - 1, j / subdivisions);
+            double t = (j % subdivisions) / (double) subdivisions;
             if (j == M - 1) {
                 s = activeSegments - 1;
                 t = 1.0D;
@@ -119,7 +147,10 @@ public class ProceduralTailRenderer {
             Vec3 p3 = (s + 2 < N) ? P[s + 2] : p2.add(p2.subtract(p1));
 
             Vec3 rawC = catmullRom(p0, p1, p2, p3, t);
-            if (j > 0 && j < M * 0.35D && rawC.y > C[0].y) {
+            // ★ 1.3.3: старый «анти-бугорок» (принудительное выпрямление первых 35% хвоста)
+            // оставлен только для Классики/Поднятой дуги — у реалистичного режима кривая
+            // покоя теперь непрерывна от крестца, и хак лишь портил плавность переходов:
+            if (data.getTailPhysicsMode() != 1 && j > 0 && j < M * 0.35D && rawC.y > C[0].y) {
                 rawC = new Vec3(rawC.x, C[Math.max(0, j - 1)].y, rawC.z);
             }
             C[j] = rawC;
@@ -130,7 +161,9 @@ public class ProceduralTailRenderer {
             R[j] = Mth.lerp(t, rStart, rEnd);
 
             double overallT = j / (double) (M - 1);
-            int c = (overallT >= 0.72D) ? data.getTailColorSecondary() : data.getTailColorPrimary();
+            // ★ При кастомной текстуре цветовой тинт не нужен — рисует сама текстура:
+            int c = customTex ? 0xFFFFFF
+                    : (overallT >= 0.72D ? data.getTailColorSecondary() : data.getTailColorPrimary());
             if (core && overallT < 0.72D) c = darken(c, 0.86f);
             color[j] = c;
         }
@@ -172,38 +205,58 @@ public class ProceduralTailRenderer {
             }
         }
 
-        Vec3[][] V = new Vec3[M][SIDES];
+        Vec3[][] V = new Vec3[M][sides];
         for (int j = 0; j < M; j++) {
-            for (int i = 0; i < SIDES; i++) {
-                double angle = (Math.PI * 2.0D * i) / SIDES;
+            double alongTail = j / (double) (M - 1);
+            double furFadeIn = smoothstep(0.12D, 0.38D, alongTail);
+            double tipTuftFade = smoothstep(0.72D, 0.94D, alongTail);
+            for (int i = 0; i < sides; i++) {
+                double angle = (Math.PI * 2.0D * i) / sides;
                 Vec3 radial = S[j].scale(Math.cos(angle)).add(U[j].scale(Math.sin(angle)));
-                V[j][i] = C[j].add(radial.scale(R[j]));
+                // A subtle broken-fur contour avoids the perfectly smooth rubber-tube silhouette.
+                double bodyTuft = 1.0D + 0.045D * furFadeIn * Math.cos(5.0D * angle + 0.35D);
+                double tipTuft = 1.0D + 0.075D * tipTuftFade * Math.cos(4.0D * angle + 0.55D);
+                V[j][i] = C[j].add(radial.scale(R[j] * bodyTuft * tipTuft));
             }
         }
 
         for (int j = 0; j < M - 1; j++) {
             double overallT0 = j / (double) (M - 1);
             double overallT1 = (j + 1) / (double) (M - 1);
-            // ★ ПРИВЯЗКА К ЕДИНОЙ ЮВ-РАЗВЁРТКЕ 64x64 (Zone C: Y = 32..63):
-            // Полоса 1 (v=0.515..0.718): Основная шерсть хвоста. Полоса 2 (v=0.765..0.968): Шерсть кончика!
-            float v0 = (overallT0 >= 0.72D) ? 49.0f / 64.0f : 33.0f / 64.0f;
-            float v1 = (overallT1 >= 0.72D) ? 62.0f / 64.0f : 46.0f / 64.0f;
+            // ★ 1.3.0 ФИКС ТЕКСТУР: v теперь тянется ВДОЛЬ хвоста по полосе развёртки —
+            // тело (0..72% длины) плавно проходит Y=33..46, кончик (72..100%) — Y=49..62.
+            // Раньше v была константой на всю зону, и весь хвост красился одной полосой текстуры!
+            float v0 = vAlongTail(overallT0);
+            float v1 = vAlongTail(overallT1);
 
-            for (int i = 0; i < SIDES; i++) {
-                int n = (i + 1) % SIDES;
-                float u0 = i / (float) SIDES;
-                float u1 = (i + 1) / (float) SIDES;
+            for (int i = 0; i < sides; i++) {
+                int n = (i + 1) % sides;
+                float u0 = i / (float) sides;
+                float u1 = (i + 1) / (float) sides;
                 Vec3 normal = V[j][i].subtract(C[j]).add(V[j + 1][n].subtract(C[j])).normalize();
                 quadUV(poseStack, consumer, V[j][i], V[j + 1][i], V[j + 1][n], V[j][n], color[j], packedLight, normal, u0, u1, v0, v1);
             }
         }
 
-        for (int i = 1; i < SIDES - 1; i++) {
+        for (int i = 1; i < sides - 1; i++) {
             tri(poseStack, consumer, V[0][0], V[0][i], V[0][i + 1], color[0], packedLight, T[0].scale(-1));
         }
-        for (int i = 1; i < SIDES - 1; i++) {
+        for (int i = 1; i < sides - 1; i++) {
             tri(poseStack, consumer, V[M - 1][0], V[M - 1][i + 1], V[M - 1][i], color[M - 1], packedLight, T[M - 1]);
         }
+    }
+
+    /**
+     * ★ 1.3.0: непрерывная привязка позиции вдоль хвоста (0..1) к вертикали единого листа:
+     * тело хвоста занимает Y=33..46 (верх = основание), пушистый кончик — Y=49..62.
+     */
+    private static float vAlongTail(double overallT) {
+        if (overallT < 0.72D) {
+            double local = overallT / 0.72D;
+            return (float) ((33.0D + local * 13.5D) / 64.0D);
+        }
+        double local = (overallT - 0.72D) / 0.28D;
+        return (float) ((49.0D + local * 13.0D) / 64.0D);
     }
 
     private static Vec3 catmullRom(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, double t) {
@@ -245,9 +298,22 @@ public class ProceduralTailRenderer {
     private static double radiusFor(PlayerEarsTailData data, int segment, int activeSegments) {
         double t = activeSegments <= 1 ? 0.0D : segment / (double) (activeSegments - 1);
         double taper = Mth.clamp(data.getTailTaper(), 0.35D, 1.45D);
-        double profile = 0.31D * (1.0D - t * t * (1.0D - taper * 0.60D));
+        double taperFactor = (taper - 0.35D) / (1.45D - 0.35D);
+
+        // Fox-plume profile: a narrow root, a full soft brush through the middle,
+        // then a distinctly tapered colored tip instead of a uniform rounded tube.
+        double rootToPlume = smoothstep(0.0D, 0.20D, t);
+        double tipFade = smoothstep(0.64D, 1.0D, t);
+        double plumeRadius = Mth.lerp(rootToPlume, 0.105D, 0.325D);
+        double pointedTipRadius = Mth.lerp(taperFactor, 0.035D, 0.125D);
+        double profile = Mth.lerp(tipFade, plumeRadius, pointedTipRadius);
         profile *= data.getTailScaleX();
-        return Mth.clamp(profile, 0.095D, 0.38D);
+        return Mth.clamp(profile, 0.045D, 0.38D);
+    }
+
+    private static double smoothstep(double edge0, double edge1, double x) {
+        double t = Mth.clamp((x - edge0) / (edge1 - edge0), 0.0D, 1.0D);
+        return t * t * (3.0D - 2.0D * t);
     }
 
     private static int darken(int rgb, float factor) {
