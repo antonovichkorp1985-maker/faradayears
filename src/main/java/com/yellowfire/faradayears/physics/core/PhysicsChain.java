@@ -23,13 +23,10 @@ import java.util.List;
  *                                              к земле, в прыжке — стабилизатор; при повороте хлещет
  *                                              против поворота (руль гепарда), при уроне — распушается
  *                                              и хлещет; сидя/лёжа — обвивается вокруг ног.
- *  - {@link #MODE_LIFTED}    «Поднятая»     — поведение 1.0.1 fox-tail-lift: горизонтальный выход
- *                                              из поясницы, приподнятая дуга, земля не притягивает.
  */
 public class PhysicsChain {
     public static final int MODE_CLASSIC = 0;
     public static final int MODE_REALISTIC = 1;
-    public static final int MODE_LIFTED = 2;
 
     /** ★ 1.3.5: угол выхода хвоста из поясницы (рад; вниз < 0) — анатомия ДВУНОГОГО зверолюда:
      *  позвоночник человека вертикален, хвост выходит из крестца/копчика ВНИЗ-НАЗАД (~−35°),
@@ -101,9 +98,7 @@ public class PhysicsChain {
             // Реалистичный режим стартует прямой цепью позвонков от копчика. Форма должна
             // возникнуть из гравитации, суставов и мышечного момента, а не из готовой S-кривой.
             Vec3 step;
-            if (physicsMode == MODE_CLASSIC) step = dir;
-            else if (physicsMode == MODE_REALISTIC) step = skeletalRootDirection(dir);
-            else step = restDirection(dir, i, count);
+            step = physicsMode == MODE_REALISTIC ? skeletalRootDirection(dir) : dir;
             p = p.add(step.scale(segLen));
             double taper = count <= 1 ? 0.0D : i / (double) (count - 1);
             PhysicsParticle particle = new PhysicsParticle(p, Math.max(0.09D, baseRadius * (1.0D - taper * 0.42D)));
@@ -159,7 +154,6 @@ public class PhysicsChain {
         // 1) Verlet integration. Распределение гравитации зависит от режима:
         //    Классика   — почти невесомое основание и усиленный к кончику градиент (1.0.0);
         //    Реалистичная — естественный градиент: несущее основание + тяжёлый кончик;
-        //    Поднятая   — одинаковая гравитация для всех частиц (1.0.1).
         for (int i = 0; i < particles.size(); i++) {
             PhysicsParticle p = particles.get(i);
             p.touchingGround = false;
@@ -241,10 +235,9 @@ public class PhysicsChain {
                 double segWagRad = Math.toRadians(wagAmp * Math.sin(segTime));
                 double segWagRad2 = Math.toRadians(wagAmp * Math.cos(segTime * 0.8D));
 
-                Vec3 jointDir;
-                if (physicsMode == MODE_CLASSIC) jointDir = baseDir;
-                else if (physicsMode == MODE_REALISTIC) jointDir = skeletalRootDirection(baseDir);
-                else jointDir = restDirection(baseDir, i, particles.size());
+                Vec3 jointDir = physicsMode == MODE_REALISTIC
+                        ? skeletalRootDirection(baseDir)
+                        : baseDir;
                 if (wagAxis != 3 && wagAmp > 0.05f) {
                     if (wagAxis == 0) {
                         double cos = Math.cos(segWagRad * (0.35D + distal * 0.45D));
@@ -274,20 +267,7 @@ public class PhysicsChain {
                 }
                 if (crouching) groundFade = Math.min(groundFade, 0.25D);
 
-                if (physicsMode == MODE_LIFTED) {
-                    // ★ ПОДНЯТАЯ ДУГА (1.0.1): точный горизонтальный выход у поясницы,
-                    //   лёгкая поддерживающая дуга по всей длине, к земле не притягиваем.
-                    if (i == 0) {
-                        double k0 = baseStiffness * (0.75D + 0.25D * groundFade);
-                        p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
-                    } else {
-                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double restWeight = baseStiffness * Mth.lerp(distal, 0.52D, 0.30D);
-                        restWeight *= 1.0D + 0.35D * (1.0D - groundFade);
-                        if (crouching) restWeight *= 0.90D;
-                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
-                    }
-                } else if (physicsMode == MODE_REALISTIC) {
+                if (physicsMode == MODE_REALISTIC) {
                     // СКЕЛЕТ + МЫШЦЫ: никаких arcTarget/S-кривых. Сначала сохраняем длину,
                     // затем сустав ограничивает резкий перелом, а мышцы прикладывают слабый
                     // ограниченный момент. Земля и инерция имеют право победить мышцы.
@@ -359,14 +339,12 @@ public class PhysicsChain {
     /**
      * Режимная «присадка» дистальной части к земле:
      *  - Классика:     как в 1.0.0 — сильное притяжение (0.95) в пределах 45 см над землёй;
-     *  - Реалистичная: мягкая (0.60) для дальней 2/3 хвоста в пределах 35 см — кончик
-     *                  спокойно ложится на землю, как у отдыхающего кота (кроме позы обвива);
-     *  - Поднятая:     отключено (хвост не должен «прилипать» к земле).
+     *  - Реалистичная: искусственная присадка отключена; работают гравитация и коллизии.
      */
     private void settleDistalNearGround(Level level, Entity owner) {
         // Скелетный реалистичный режим ложится на землю только гравитацией и коллизиями.
         // Искусственная «присадка» дистальной части была ещё одной скрытой позой.
-        if (physicsMode == MODE_LIFTED || physicsMode == MODE_REALISTIC) return;
+        if (physicsMode == MODE_REALISTIC) return;
         if (sitBlend > 0.4D) return; // в обвиве старых режимов землю обрабатывает спираль
         if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
 
@@ -398,50 +376,6 @@ public class PhysicsChain {
                 }
             }
         }
-    }
-
-    /**
-     * Анатомическое направление покоя для сустава `index` (режимы Реалистичная/Поднятая):
-     *  - Поднятая:     первый сегмент выходит из поясницы горизонтально, середина приподнята,
-     *                  кончик слегка опускается;
-     *  - Реалистичная: кошачий S-профиль — у поясницы чуть вниз, середина свободно провисает
-     *                  под весом меха, кончик мягко подкурчивается вверх (как у лисы).
-     *                  Классика использует направление как есть (с наклоном вниз).
-     */
-    private Vec3 restDirection(Vec3 horizontalBack, int index, int count) {
-        if (physicsMode == MODE_CLASSIC) return horizontalBack;
-        Vec3 back = new Vec3(horizontalBack.x, 0.0D, horizontalBack.z);
-        if (back.lengthSqr() < 1.0E-8D) back = new Vec3(0.0D, 0.0D, -1.0D);
-        back = back.normalize();
-        if (index <= 0 || count <= 1) {
-            // ★ 1.3.3: у реалистичного хвоста основание выходит вдоль линии низа спины
-            // (продолжение крестца), а НЕ горизонтально — иначе у корня торчит «бугорок»:
-            if (physicsMode == MODE_REALISTIC) return dirFromAngle(back, EXIT_ANGLE);
-            return back; // Поднятая дуга: горизонтальный выход — её дизайн (1.0.1)
-        }
-
-        double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
-
-        if (physicsMode == MODE_REALISTIC) {
-            // ★ 1.3.4 ОРГАНИЧНОЕ НЕСЕНИЕ: скорость «слома» зависит от тонуса мышц:
-            //   расслаблен (покой) → хвост складывается сразу за крупом и висит,
-            //   как настоящая кошачья/лисая шерсть; напряжён (спринт/прыжок) →
-            //   несётся почти прямым вымпелом. Никакого длинного «холма» у основания.
-            double carriage = carryAngle + tipCurl * smoothstep(0.55D, 1.0D, t);
-            double foldSpan = 0.08D + 0.60D * tension; // покой ~26% длины, спринт ~59%
-            double blend = smoothstep(0.0D, foldSpan, t);
-            return dirFromAngle(back, EXIT_ANGLE + (carriage - EXIT_ANGLE) * blend);
-        }
-
-        boolean lifted = (physicsMode == MODE_LIFTED);
-        double lift = lifted ? 0.34D : 0.20D;
-        double drop = lifted ? 0.18D : 0.10D;
-        double tipStart = lifted ? 0.72D : 0.78D;
-
-        double liftAngle = lift * Math.sin(Math.PI * t);
-        double tipDrop = drop * smoothstep(tipStart, 1.0D, t);
-        double angle = liftAngle - tipDrop;
-        return new Vec3(back.x * Math.cos(angle), Math.sin(angle), back.z * Math.cos(angle)).normalize();
     }
 
     /**

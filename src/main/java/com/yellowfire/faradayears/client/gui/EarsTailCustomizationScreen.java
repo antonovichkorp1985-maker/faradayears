@@ -133,9 +133,9 @@ public class EarsTailCustomizationScreen extends Screen {
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
 
-            // ★ 1.2.0: переключатель режима физики хвоста (Классика / Баланс / Поднятая дуга):
+            // 1.4.0: два понятных режима — свободная классика и скелетно-мышечный хвост.
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))), b -> {
-                localData.setTailPhysicsMode((localData.getTailPhysicsMode() + 1) % 3);
+                localData.setTailPhysicsMode((localData.getTailPhysicsMode() + 1) % 2);
                 b.setMessage(Component.translatable("gui.faradayears.physics", Component.translatable(getPhysicsModeKey(localData.getTailPhysicsMode()))));
                 applyLiveUpdate();
             }).bounds(panelLeft, topPos + 40, btnWidth, 18).build());
@@ -316,11 +316,7 @@ public class EarsTailCustomizationScreen extends Screen {
 
     /** ★ 1.3.1: ключ локализации режима физики хвоста. */
     private String getPhysicsModeKey(int mode) {
-        return switch (mode) {
-            case 1 -> "gui.faradayears.physics.1";
-            case 2 -> "gui.faradayears.physics.2";
-            default -> "gui.faradayears.physics.0";
-        };
+        return mode == 1 ? "gui.faradayears.physics.1" : "gui.faradayears.physics.0";
     }
 
     /** ★ 1.3.1: ключ локализации формы ушек. */

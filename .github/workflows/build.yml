@@ -3,6 +3,7 @@ name: Build FaradayEarsMod (NeoForge 1.21.1)
 on:
   push:
     branches: [ main, master, 1.21.1-neoforge, 'arena/**' ]
+    tags: [ 'v*' ]
     paths-ignore: [ 'README.md', 'CHANGELOG.md', 'LICENSE' ]
   pull_request:
   workflow_dispatch:

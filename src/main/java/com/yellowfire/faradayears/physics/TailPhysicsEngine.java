@@ -245,10 +245,9 @@ public class TailPhysicsEngine {
             int activeTails = superVolumetric ? 1 : Math.max(1, Math.min(MAX_TAILS, tailCount));
             state.activeTails = activeTails;
 
-            // ★ 1.2.0/1.3.0: режим физики хвоста (0=Классика, 1=Реалистичная кошачья, 2=Поднятая дуга):
-            int physicsMode = Mth.clamp(data.getTailPhysicsMode(), PhysicsChain.MODE_CLASSIC, PhysicsChain.MODE_LIFTED);
-            double backPitch = physicsMode == PhysicsChain.MODE_LIFTED ? 0.0D
-                    : (physicsMode == PhysicsChain.MODE_REALISTIC ? state.carryAngle : -0.75D);
+            // 1.4.0: 0=Классика, 1=Реалистичная скелетно-мышечная.
+            int physicsMode = Mth.clamp(data.getTailPhysicsMode(), PhysicsChain.MODE_CLASSIC, PhysicsChain.MODE_REALISTIC);
+            double backPitch = physicsMode == PhysicsChain.MODE_REALISTIC ? state.carryAngle : -0.75D;
             Vec3 centerDir = computeBackDirection(player, backPitch);
 
             if (!state.initialized || teleported) {

@@ -60,7 +60,8 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
     private float tailWagSpeed = 1.5f;
     private String customTextureBase64 = "";
 
-    // ★ 1.2.0: 0 = Классика (1.0.0, стелется по земле), 1 = Баланс (средний), 2 = Поднятая дуга (1.0.1):
+    // 1.4.0: 0 = Классика (свободная нить), 1 = Реалистичная скелетно-мышечная.
+    // Удалённое значение 2 при загрузке мигрирует в реалистичный режим.
     private int tailPhysicsMode = 0;
     // ★ 1.2.0: применять ли кастомную текстуру 64x64 (единый лист ушек+хвоста):
     private boolean customTextureEnabled = false;
@@ -472,7 +473,7 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         if (nbt.contains("TailWagAmplitude")) tailWagAmplitude = nbt.getFloat("TailWagAmplitude");
         if (nbt.contains("TailWagSpeed")) tailWagSpeed = nbt.getFloat("TailWagSpeed");
         if (nbt.contains("CustomTextureBase64")) customTextureBase64 = nbt.getString("CustomTextureBase64");
-        if (nbt.contains("TailPhysicsMode")) tailPhysicsMode = nbt.getInt("TailPhysicsMode");
+        if (nbt.contains("TailPhysicsMode")) setTailPhysicsMode(nbt.getInt("TailPhysicsMode"));
         if (nbt.contains("CustomTextureEnabled")) customTextureEnabled = nbt.getBoolean("CustomTextureEnabled");
         if (nbt.contains("Gender")) gender = nbt.getInt("Gender");
         if (nbt.contains("ShowChest")) showChest = nbt.getBoolean("ShowChest");
