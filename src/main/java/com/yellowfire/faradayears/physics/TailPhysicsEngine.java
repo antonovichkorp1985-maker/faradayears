@@ -194,7 +194,7 @@ public class TailPhysicsEngine {
 
             double carryTarget, curlTarget, tensionTarget;
             if (state.sitting) {
-                carryTarget = -0.90D; curlTarget = 0.20D; tensionTarget = 0.50D;
+                carryTarget = -1.20D; curlTarget = 0.20D; tensionTarget = 0.50D;
             } else if (airborne) {
                 carryTarget = -0.50D; curlTarget = 0.05D; tensionTarget = 0.72D;
             } else if (sneaking) {
@@ -204,7 +204,9 @@ public class TailPhysicsEngine {
             } else if (walking) {
                 carryTarget = -0.40D; curlTarget = 0.12D; tensionTarget = 0.42D;
             } else {
-                carryTarget = -1.05D; curlTarget = 0.35D; tensionTarget = 0.30D;
+                // ★ 1.3.4: покой = настоящее свисание (−80°): складывается сразу за крупом,
+                // а не «холмом» с постепенным набором угла:
+                carryTarget = -1.40D; curlTarget = 0.35D; tensionTarget = 0.30D;
             }
             state.carryAngle += (carryTarget - state.carryAngle) * 0.09D;
             state.tipCurl += (curlTarget - state.tipCurl) * 0.09D;

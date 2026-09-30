@@ -373,12 +373,13 @@ public class PhysicsChain {
         double t = Mth.clamp(index / (double) (count - 1), 0.0D, 1.0D);
 
         if (physicsMode == MODE_REALISTIC) {
-            // ★ 1.3.3 ОРГАНИЧНОЕ НЕСЕНИЕ: кривая покоя непрерывна по всей длине:
-            //   выход из поясницы (~-23°, продолжение тела) → плавный набор угла несения
-            //   к середине хвоста → подкрученный кончик в покое. Никаких «ступенек»
-            //   у корня — хвост выглядит выросшим, а не надетым.
+            // ★ 1.3.4 ОРГАНИЧНОЕ НЕСЕНИЕ: скорость «слома» зависит от тонуса мышц:
+            //   расслаблен (покой) → хвост складывается сразу за крупом и висит,
+            //   как настоящая кошачья/лисая шерсть; напряжён (спринт/прыжок) →
+            //   несётся почти прямым вымпелом. Никакого длинного «холма» у основания.
             double carriage = carryAngle + tipCurl * smoothstep(0.55D, 1.0D, t);
-            double blend = smoothstep(0.0D, 0.45D, t); // к ~45% длины выходим на несение
+            double foldSpan = 0.08D + 0.60D * tension; // покой ~26% длины, спринт ~59%
+            double blend = smoothstep(0.0D, foldSpan, t);
             return dirFromAngle(back, EXIT_ANGLE + (carriage - EXIT_ANGLE) * blend);
         }
 
@@ -459,7 +460,11 @@ public class PhysicsChain {
     }
 
     private Vec3 collideOwnerCylinder(Entity owner, Vec3 point, double radius, int segmentIndex) {
-        if (owner == null || segmentIndex <= 0) return point;
+        // ★ 1.3.4: первые 4 сегмента НЕ расталкиваем от тела — хвост РАСТЁТ из крестца
+        // и обязан обнимать круп. Раньше цилиндр (r≈0.31) выталкивал основание
+        // горизонтально наружу (корень всего в 0.11 блока от центра тела) —
+        // из-за этого у поясницы торчала «полка»-бугорок, как будто хвост приставной.
+        if (owner == null || segmentIndex < 4) return point;
         double y = point.y - owner.getY();
         if (y < -0.05D || y > 1.35D) return point;
 

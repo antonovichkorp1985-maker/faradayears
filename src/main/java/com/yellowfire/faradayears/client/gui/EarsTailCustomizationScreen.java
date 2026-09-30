@@ -510,6 +510,15 @@ public class EarsTailCustomizationScreen extends Screen {
     }
 
     @Override
+    /** ★ 1.3.4: БЕЗ ванильного блюра мира. Стандартный renderBackground в 1.21.1 размывает
+     *  весь мир позади меню гауссовым блюром, а наши панели полупрозрачные — размытый
+     *  мир просвечивал сквозь всё меню и 3D-превью, всё выглядело «мыльным».
+     *  Кастомайзеру нужна читаемость: просто затемняем мир мягким градиентом. */
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        guiGraphics.fillGradient(0, 0, this.width, this.height, 0xB0100F0D, 0xC812100E);
+    }
+
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 

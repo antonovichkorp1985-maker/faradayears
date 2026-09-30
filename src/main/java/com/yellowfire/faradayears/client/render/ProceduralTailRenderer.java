@@ -300,11 +300,13 @@ public class ProceduralTailRenderer {
         double taper = Mth.clamp(data.getTailTaper(), 0.35D, 1.45D);
         double taperFactor = (taper - 0.35D) / (1.45D - 0.35D);
 
-        // Fox-plume profile: a narrow root, a full soft brush through the middle,
-        // then a distinctly tapered colored tip instead of a uniform rounded tube.
+        // Fox-plume profile: ★ 1.3.4 — толстый корень-«падоб» (настоящий хвост шире всего
+        // у основания, у крестца) → пышная кисть в середине → заострённый кончик.
+        // Раньше корень был тоньше середины в 3 раза (0.105) — хвост выглядел палкой,
+        // воткнутой в спину, плюс его расталкивал цилиндр тела → «бугорок».
         double rootToPlume = smoothstep(0.0D, 0.20D, t);
         double tipFade = smoothstep(0.64D, 1.0D, t);
-        double plumeRadius = Mth.lerp(rootToPlume, 0.105D, 0.325D);
+        double plumeRadius = Mth.lerp(rootToPlume, 0.170D, 0.325D);
         double pointedTipRadius = Mth.lerp(taperFactor, 0.035D, 0.125D);
         double profile = Mth.lerp(tipFade, plumeRadius, pointedTipRadius);
         profile *= data.getTailScaleX();
