@@ -92,8 +92,12 @@ public class PhysicsChain {
         Vec3 p = root;
         for (int i = 0; i < count; i++) {
             double segLen = getSegmentLength(i, count, segmentLength);
-            // В режимах Баланс/Поднятая стартовая укладка идёт по анатомической дуге:
-            Vec3 step = (physicsMode == MODE_CLASSIC) ? dir : restDirection(dir, i, count);
+            // Реалистичный режим стартует прямой цепью позвонков от копчика. Форма должна
+            // возникнуть из гравитации, суставов и мышечного момента, а не из готовой S-кривой.
+            Vec3 step;
+            if (physicsMode == MODE_CLASSIC) step = dir;
+            else if (physicsMode == MODE_REALISTIC) step = skeletalRootDirection(dir);
+            else step = restDirection(dir, i, count);
             p = p.add(step.scale(segLen));
             double taper = count <= 1 ? 0.0D : i / (double) (count - 1);
             PhysicsParticle particle = new PhysicsParticle(p, Math.max(0.09D, baseRadius * (1.0D - taper * 0.42D)));
@@ -138,7 +142,9 @@ public class PhysicsChain {
         Vec3 upVector = sideVector.cross(baseDir).normalize();
 
         // ★ 1.3.0: цели «обвивания вокруг ног» для позы сидя/сна (кошачий заворот):
-        Vec3[] sitTargets = (sitBlend > 0.01D && owner != null)
+        // Старые режимы сохраняют процедурный обвив. В реалистичном режиме готовая спираль
+        // отключена: на первом скелетном этапе хвост должен лечь под массой и коллизиями.
+        Vec3[] sitTargets = (physicsMode != MODE_REALISTIC && sitBlend > 0.01D && owner != null)
                 ? computeSitCurlTargets(level, owner, baseDir, root)
                 : null;
 
@@ -189,12 +195,15 @@ public class PhysicsChain {
             if (physicsMode == MODE_CLASSIC) {
                 gScale = (i == 0) ? 0.08D : (1.0D + distal * 0.35D);
             } else if (physicsMode == MODE_REALISTIC) {
-                // ★ 1.3.2: в спринте/прыжке мышцы активно несут хвост — гравитация ослаблена:
-                gScale = (i == 0) ? 0.30D : (0.88D + distal * 0.22D) * (1.0D - 0.55D * tension);
+                // Скелетно-мышечная модель: масса не исчезает при напряжении мышц. Тонус
+                // создаёт ограниченный момент в суставах ниже, а гравитация действует всегда.
+                gScale = (i == 0) ? 0.48D : (0.82D + distal * 0.38D);
             } else {
                 gScale = 1.0D;
             }
-            if (sitBlend > 0.0D) gScale *= (1.0D - 0.65D * sitBlend); // в обвиве хвост почти невесомый
+            if (sitBlend > 0.0D && physicsMode != MODE_REALISTIC) {
+                gScale *= (1.0D - 0.65D * sitBlend); // процедурный обвив старых режимов
+            }
             p.applyForce(gravity.scale(gScale));
             if (lateralWag.lengthSqr() > 0.0D) p.applyForce(lateralWag);
             p.verlet(damping);
@@ -214,7 +223,10 @@ public class PhysicsChain {
                 double segWagRad = Math.toRadians(wagAmp * Math.sin(segTime));
                 double segWagRad2 = Math.toRadians(wagAmp * Math.cos(segTime * 0.8D));
 
-                Vec3 jointDir = (physicsMode == MODE_CLASSIC) ? baseDir : restDirection(baseDir, i, particles.size());
+                Vec3 jointDir;
+                if (physicsMode == MODE_CLASSIC) jointDir = baseDir;
+                else if (physicsMode == MODE_REALISTIC) jointDir = skeletalRootDirection(baseDir);
+                else jointDir = restDirection(baseDir, i, particles.size());
                 if (wagAxis != 3 && wagAmp > 0.05f) {
                     if (wagAxis == 0) {
                         double cos = Math.cos(segWagRad * (0.35D + distal * 0.45D));
@@ -258,19 +270,34 @@ public class PhysicsChain {
                         p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.06D, 0.30D));
                     }
                 } else if (physicsMode == MODE_REALISTIC) {
-                    // ★ 1.3.3 РЕАЛИСТИЧНАЯ (кошачья/лисяя): кривая покоя непрерывна
-                    //   (выход из поясницы → несение → кончик, см. restDirection),
-                    //   жёсткость плавно спадает от основания к кончику — без шва на i=6:
+                    // СКЕЛЕТ + МЫШЦЫ: никаких arcTarget/S-кривых. Сначала сохраняем длину,
+                    // затем сустав ограничивает резкий перелом, а мышцы прикладывают слабый
+                    // ограниченный момент. Земля и инерция имеют право победить мышцы.
+                    Vec3 currentDir = projected.subtract(anchor).normalize();
                     if (i == 0) {
-                        double k0 = baseStiffness * (0.24D + 0.55D * tension) * (0.45D + 0.55D * groundFade);
-                        p.position = lerp(projected, root.add(jointDir.scale(segLen)), k0);
+                        Vec3 rootDir = skeletalRootDirection(baseDir);
+                        double rootMuscle = Mth.clamp(baseStiffness * (0.08D + 0.18D * tension), 0.03D, 0.22D);
+                        currentDir = normalizedLerp(currentDir, rootDir, rootMuscle);
                     } else {
-                        Vec3 arcTarget = anchor.add(jointDir.scale(segLen));
-                        double restWeight = baseStiffness * Mth.lerp(distal, 0.30D, 0.10D) * (0.45D + 1.10D * tension);
-                        restWeight *= 1.0D + 0.10D * (1.0D - groundFade);
-                        if (crouching) restWeight *= 0.90D;
-                        p.position = lerp(projected, arcTarget, Mth.clamp(restWeight, 0.02D, 0.30D));
+                        Vec3 previousAnchor = (i == 1) ? root : particles.get(i - 2).position;
+                        Vec3 previousDir = anchor.subtract(previousAnchor);
+                        if (previousDir.lengthSqr() < 1.0E-8D) previousDir = skeletalRootDirection(baseDir);
+                        else previousDir = previousDir.normalize();
+
+                        // Позвонки у основания жёстче; к кончику допустимый угол больше.
+                        double maxBend = Math.toRadians(Mth.lerp(distal, 11.0D, 27.0D));
+                        currentDir = limitBend(previousDir, currentDir, maxBend);
+
+                        // Мышечное намерение задаёт локальную кривизну, не мировую позицию.
+                        // carryAngle определяет направление работы мышц, но сила ограничена.
+                        Vec3 muscleAxis = dirFromAngle(horizontalBack(baseDir), carryAngle);
+                        double proximal = 1.0D - smoothstep(0.45D, 1.0D, distal);
+                        double muscleStrength = baseStiffness * (0.006D + 0.030D * tension) * proximal;
+                        if (crouching) muscleStrength *= 0.85D;
+                        currentDir = normalizedLerp(currentDir, muscleAxis, Mth.clamp(muscleStrength, 0.0D, 0.045D));
+                        currentDir = limitBend(previousDir, currentDir, maxBend);
                     }
+                    p.position = anchor.add(currentDir.scale(segLen));
                 } else {
                     // ★ КЛАССИКА (1.0.0): слабое основание, микро-суставы у корня,
                     //   дальше — свободная верёвка, которую гравитация кладёт на землю.
@@ -317,8 +344,10 @@ public class PhysicsChain {
      *  - Поднятая:     отключено (хвост не должен «прилипать» к земле).
      */
     private void settleDistalNearGround(Level level, Entity owner) {
-        if (physicsMode == MODE_LIFTED) return;
-        if (sitBlend > 0.4D) return; // в обвиве вокруг ног землю обрабатывает сама спираль
+        // Скелетный реалистичный режим ложится на землю только гравитацией и коллизиями.
+        // Искусственная «присадка» дистальной части была ещё одной скрытой позой.
+        if (physicsMode == MODE_LIFTED || physicsMode == MODE_REALISTIC) return;
+        if (sitBlend > 0.4D) return; // в обвиве старых режимов землю обрабатывает спираль
         if (level == null || owner == null || !owner.onGround() || particles.size() < 2) return;
 
         boolean realistic = (physicsMode == MODE_REALISTIC);
@@ -443,6 +472,30 @@ public class PhysicsChain {
             targets[i] = new Vec3(px, py, pz);
         }
         return targets;
+    }
+
+    /** Направление первого хвостового позвонка — продолжение крестца вниз-назад. */
+    private Vec3 skeletalRootDirection(Vec3 baseDirection) {
+        return dirFromAngle(horizontalBack(baseDirection), EXIT_ANGLE);
+    }
+
+    private Vec3 horizontalBack(Vec3 direction) {
+        Vec3 back = new Vec3(direction.x, 0.0D, direction.z);
+        return back.lengthSqr() < 1.0E-8D ? new Vec3(0.0D, 0.0D, -1.0D) : back.normalize();
+    }
+
+    /** Ограничение угла между соседними позвонками без задания мировой целевой точки. */
+    private Vec3 limitBend(Vec3 previousDir, Vec3 currentDir, double maxAngle) {
+        double dot = Mth.clamp(previousDir.dot(currentDir), -1.0D, 1.0D);
+        double angle = Math.acos(dot);
+        if (angle <= maxAngle || angle < 1.0E-7D) return currentDir;
+        return normalizedLerp(previousDir, currentDir, maxAngle / angle);
+    }
+
+    /** Нормализованная интерполяция направлений; применяется как ограниченный мышечный момент. */
+    private Vec3 normalizedLerp(Vec3 from, Vec3 to, double amount) {
+        Vec3 mixed = from.scale(1.0D - amount).add(to.scale(amount));
+        return mixed.lengthSqr() < 1.0E-8D ? from : mixed.normalize();
     }
 
     private double smoothstep(double edge0, double edge1, double x) {
