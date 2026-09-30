@@ -224,8 +224,10 @@ public class TailPhysicsEngine {
             state.sneakBlend += ((crawling ? 1.0D : 0.0D) - state.sneakBlend) * 0.15D;
             state.gaitPhase += hSpeed * 6.3D; // фаза шага дистанцией: в покое хвост не качается
             double turnRate = Mth.wrapDegrees(player.yBodyRot - state.prevBodyRot);
-            double lashTarget = Mth.clamp(turnRate * Mth.clamp(hSpeed / 0.22D, 0.0D, 1.0D) * 0.09D, -0.022D, 0.022D);
-            state.turnLash += (lashTarget - state.turnLash) * 0.30D;
+            // Поворот — плавный противовес, не однотиковый хлыст. Прежний предел 0.022
+            // давал заметный скачок ускорения всей дистальной части.
+            double lashTarget = Mth.clamp(turnRate * Mth.clamp(hSpeed / 0.22D, 0.0D, 1.0D) * 0.035D, -0.008D, 0.008D);
+            state.turnLash += (lashTarget - state.turnLash) * 0.16D;
             if (player.hurtTime > 0) {
                 state.scareBlend += (1.0D - state.scareBlend) * 0.35D;
             } else {

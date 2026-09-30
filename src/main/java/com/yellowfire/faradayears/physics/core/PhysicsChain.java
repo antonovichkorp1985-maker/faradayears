@@ -189,7 +189,7 @@ public class PhysicsChain {
                 fx += turnLash;
                 // 5) испуг: быстрый хлёст из стороны в сторону (кошка/лиса при страхе):
                 if (scareBlend > 0.01D) {
-                    fx += Math.sin(tick * 0.75D + distal * 1.5D) * 0.016D * scareBlend;
+                    fx += Math.sin(tick * 0.75D + distal * 1.5D) * 0.008D * scareBlend;
                 }
                 lateralWag = lateralWag.add(sideVector.scale(fx * distal));
             }
@@ -222,6 +222,14 @@ public class PhysicsChain {
         }
 
         boolean crouching = (owner != null && owner.isShiftKeyDown());
+
+        // Запоминаем результат чистой интеграции. Позже отделим физическую скорость от
+        // позиционной коррекции PBD — иначе коррекция сустава превращается в новый импульс
+        // и хвост попеременно «замирает / выстреливает».
+        Vec3[] integratedPositions = physicsMode == MODE_REALISTIC ? new Vec3[particles.size()] : null;
+        if (integratedPositions != null) {
+            for (int i = 0; i < particles.size(); i++) integratedPositions[i] = particles.get(i).position;
+        }
 
         // 2) PBD constraints with Base-Concentrated Micro-Joints (`segLen`):
         for (int it = 0; it < iterations; it++) {
@@ -328,12 +336,30 @@ public class PhysicsChain {
                 p.position = result.position;
                 p.touchingGround = p.touchingGround || result.ground;
                 if (result.ground) {
-                    p.slideOnGround(0.80D);
+                    p.slideOnGround(physicsMode == MODE_REALISTIC ? 0.38D : 0.80D);
                 }
             }
         }
 
         settleDistalNearGround(level, owner);
+
+        if (integratedPositions != null) {
+            for (int i = 0; i < particles.size(); i++) {
+                PhysicsParticle p = particles.get(i);
+                Vec3 correction = p.position.subtract(integratedPositions[i]);
+                // 85% служебной PBD-коррекции не становится скоростью следующего тика.
+                p.previousPosition = p.previousPosition.add(correction.scale(0.85D));
+
+                double distal = particles.size() <= 1 ? 1.0D : i / (double) (particles.size() - 1);
+                double maxVelocity = Mth.lerp(distal, 0.13D, 0.23D);
+                Vec3 velocity = p.position.subtract(p.previousPosition);
+                double speed = velocity.length();
+                if (speed > maxVelocity) {
+                    velocity = velocity.scale(maxVelocity / speed);
+                    p.previousPosition = p.position.subtract(velocity);
+                }
+            }
+        }
     }
 
     /**
@@ -372,7 +398,7 @@ public class PhysicsChain {
                 p.position = result.position;
                 p.touchingGround = p.touchingGround || result.ground;
                 if (p.touchingGround) {
-                    p.slideOnGround(0.80D);
+                    p.slideOnGround(physicsMode == MODE_REALISTIC ? 0.38D : 0.80D);
                 }
             }
         }
