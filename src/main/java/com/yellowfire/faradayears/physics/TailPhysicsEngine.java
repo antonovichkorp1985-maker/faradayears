@@ -335,9 +335,13 @@ public class TailPhysicsEngine {
             yOffsetBlocks = data.getTailRotX() / 32.0D;
         }
 
-        double totalBackDist = 0.11D + zOffsetBlocks;
+        // При приседании таз модели уходит назад, а прежний root одновременно опускался
+        // и оставался около центральной оси игрока. В ракурсе сзади хвост поэтому визуально
+        // выходил между ног. Следуем за крестцом: немного выше и заметно дальше назад.
+        boolean crouching = player.isCrouching();
+        double totalBackDist = (crouching ? 0.20D : 0.11D) + zOffsetBlocks;
         double x = player.getX() + sinBody * totalBackDist;
-        double y = player.getY() + (player.isCrouching() ? 0.63D : 0.77D) + yOffsetBlocks;
+        double y = player.getY() + (crouching ? 0.73D : 0.77D) + yOffsetBlocks;
         double z = player.getZ() - cosBody * totalBackDist;
         return new Vec3(x, y, z);
     }
