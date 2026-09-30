@@ -49,7 +49,15 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
         PlayerEarsTailData data = ModAttachments.get(player);
         {
-            ResourceLocation texture = DEFAULT_TEXTURE;
+            // ★ 1.2.0: единый кастомный лист 64x64 (если включён) вместо стандартной текстуры:
+            boolean customTex = CustomTailTextureManager.hasCustomTexture(data);
+            ResourceLocation texture = customTex
+                    ? CustomTailTextureManager.getTexture(player.getUUID(), data.getCustomTextureBase64())
+                    : DEFAULT_TEXTURE;
+            if (texture == null) {
+                customTex = false;
+                texture = DEFAULT_TEXTURE;
+            }
             VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
 
             TailPhysicsEngine.INSTANCE.onRenderInterpolate(player, partialTick);
@@ -93,7 +101,12 @@ public class EarsAndTailLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                         data.getEarScaleX(), data.getEarScaleY(), data.getEarScaleZ()
                 );
 
-                earsModel.renderWithColorsAndShape(data.getEarShape(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, data.getEarColorPrimary(), data.getEarColorSecondary());
+                // ★ 1.3.0 ФИКС ТЕКСТУР: при включённой кастомной текстуре ушки должен красить
+                // САМ нарисованный лист (белый тинт), а не сплошной цвет ушей поверх текстуры —
+                // раньше зона ушек в редакторе просто не была видна на модели:
+                int earOuterColor = customTex ? 0xFFFFFF : data.getEarColorPrimary();
+                int earInnerColor = customTex ? 0xFFFFFF : data.getEarColorSecondary();
+                earsModel.renderWithColorsAndShape(data.getEarShape(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY, earOuterColor, earInnerColor);
 
                 poseStack.popPose();
             }
