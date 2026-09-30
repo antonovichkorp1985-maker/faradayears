@@ -43,6 +43,12 @@ public class PhysicsChain {
     public int iterations = 10;
     public int physicsMode = MODE_CLASSIC;
 
+    /**
+     * Диагностика A/B: JVM-аргумент -Dfaradayears.passiveTail=true отключает мышечные
+     * моменты и активную мимику только режима 1, оставляя скелет, массу и коллизии.
+     */
+    private static final boolean PASSIVE_REALISTIC_TAIL = Boolean.getBoolean("faradayears.passiveTail");
+
     /** ★ 1.3.0: 0..1 — насколько хвост сейчас «обвит» вокруг ног (плавный вход/выход из позы сидя). */
     public double sitBlend = 0.0D;
 
@@ -101,7 +107,9 @@ public class PhysicsChain {
             p = p.add(step.scale(segLen));
             double taper = count <= 1 ? 0.0D : i / (double) (count - 1);
             PhysicsParticle particle = new PhysicsParticle(p, Math.max(0.09D, baseRadius * (1.0D - taper * 0.42D)));
-            particle.mass = 1.0D + taper * 0.40D;
+            // Распределённая масса мягких тканей: мясистое основание тяжелее, костный
+            // и меховой кончик легче. Гравитационное ускорение ниже компенсируется массой.
+            particle.mass = Mth.lerp(taper, 1.40D, 0.48D);
             particles.add(particle);
         }
     }
@@ -204,9 +212,19 @@ public class PhysicsChain {
             if (sitBlend > 0.0D && physicsMode != MODE_REALISTIC) {
                 gScale *= (1.0D - 0.65D * sitBlend); // процедурный обвив старых режимов
             }
-            p.applyForce(gravity.scale(gScale));
-            if (lateralWag.lengthSqr() > 0.0D) p.applyForce(lateralWag);
-            p.verlet(damping);
+            // applyForce делит на массу: умножаем гравитацию на массу, чтобы ускорение
+            // свободного падения не зависело от толщины тканей. Масса остаётся доступна
+            // для последующего mass-weighted решателя суставов.
+            p.applyForce(gravity.scale(gScale * p.mass));
+            if (lateralWag.lengthSqr() > 0.0D
+                    && !(physicsMode == MODE_REALISTIC && PASSIVE_REALISTIC_TAIL)) {
+                p.applyForce(lateralWag);
+            }
+            // Мягкие ткани и густой мех гасят высокочастотный хлыст к кончику.
+            double tissueDamping = physicsMode == MODE_REALISTIC
+                    ? Mth.clamp(damping - distal * 0.035D, 0.72D, 0.92D)
+                    : damping;
+            p.verlet(tissueDamping);
         }
 
         boolean crouching = (owner != null && owner.isShiftKeyDown());
@@ -276,7 +294,8 @@ public class PhysicsChain {
                     Vec3 currentDir = projected.subtract(anchor).normalize();
                     if (i == 0) {
                         Vec3 rootDir = skeletalRootDirection(baseDir);
-                        double rootMuscle = Mth.clamp(baseStiffness * (0.08D + 0.18D * tension), 0.03D, 0.22D);
+                        double rootMuscle = PASSIVE_REALISTIC_TAIL ? 0.0D
+                                : Mth.clamp(baseStiffness * (0.08D + 0.18D * tension), 0.03D, 0.22D);
                         currentDir = normalizedLerp(currentDir, rootDir, rootMuscle);
                     } else {
                         Vec3 previousAnchor = (i == 1) ? root : particles.get(i - 2).position;
@@ -292,7 +311,8 @@ public class PhysicsChain {
                         // carryAngle определяет направление работы мышц, но сила ограничена.
                         Vec3 muscleAxis = dirFromAngle(horizontalBack(baseDir), carryAngle);
                         double proximal = 1.0D - smoothstep(0.45D, 1.0D, distal);
-                        double muscleStrength = baseStiffness * (0.006D + 0.030D * tension) * proximal;
+                        double muscleStrength = PASSIVE_REALISTIC_TAIL ? 0.0D
+                                : baseStiffness * (0.006D + 0.030D * tension) * proximal;
                         if (crouching) muscleStrength *= 0.85D;
                         currentDir = normalizedLerp(currentDir, muscleAxis, Mth.clamp(muscleStrength, 0.0D, 0.045D));
                         currentDir = limitBend(previousDir, currentDir, maxBend);
