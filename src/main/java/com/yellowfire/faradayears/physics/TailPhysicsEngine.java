@@ -188,6 +188,10 @@ public class TailPhysicsEngine {
             Vec3 stepMove = playerPos.subtract(state.prevPlayerPos);
             double hSpeed = Math.sqrt(stepMove.x * stepMove.x + stepMove.z * stepMove.z);
             boolean sneaking = player.isShiftKeyDown() || player.isCrouching();
+            // ★ 1.3.5 ЗВЕРОЛЮД-ГИБРИД (выбор владельца): лёгкое приседание (Shift) —
+            // контрбаланс капуцина (хвост назад-вверх против наклона вперёд, Massaro 2016);
+            // глубокая крадучись (ползание, Pose.SWIMMING на земле) — кошачий stalking:
+            boolean crawling = player.getPose() == Pose.SWIMMING && !player.isInWaterOrBubble();
             boolean airborne = !player.onGround();
             boolean sprinting = (player.isSprinting() && hSpeed > 0.15D) || hSpeed > 0.27D;
             boolean walking = hSpeed > 0.045D;
@@ -195,10 +199,14 @@ public class TailPhysicsEngine {
             double carryTarget, curlTarget, tensionTarget;
             if (state.sitting) {
                 carryTarget = -1.20D; curlTarget = 0.20D; tensionTarget = 0.50D;
+            } else if (crawling) {
+                // Глубокая крадучись (ползание): кошка на охоте — прижат к земле, кончик волочится:
+                carryTarget = -1.25D; curlTarget = 0.15D; tensionTarget = 0.10D;
             } else if (airborne) {
                 carryTarget = -0.50D; curlTarget = 0.05D; tensionTarget = 0.72D;
             } else if (sneaking) {
-                carryTarget = -0.80D; curlTarget = 0.15D; tensionTarget = 0.12D;
+                // Лёгкое приседание: капуцин-контрбаланс — хвост чуть назад-вверх против наклона:
+                carryTarget = -0.45D; curlTarget = 0.05D; tensionTarget = 0.40D;
             } else if (sprinting) {
                 carryTarget = -0.08D; curlTarget = 0.00D; tensionTarget = 0.85D;
             } else if (walking) {
@@ -212,7 +220,8 @@ public class TailPhysicsEngine {
             state.tipCurl += (curlTarget - state.tipCurl) * 0.09D;
             state.tension += (tensionTarget - state.tension) * 0.10D;
             state.moveBlend += ((walking || sprinting ? 1.0D : 0.0D) - state.moveBlend) * 0.12D;
-            state.sneakBlend += ((sneaking ? 1.0D : 0.0D) - state.sneakBlend) * 0.15D;
+            // ★ 1.3.5: sneakBlend = «ползание/stalking» — прижим к земле только при нём:
+            state.sneakBlend += ((crawling ? 1.0D : 0.0D) - state.sneakBlend) * 0.15D;
             state.gaitPhase += hSpeed * 6.3D; // фаза шага дистанцией: в покое хвост не качается
             double turnRate = Mth.wrapDegrees(player.yBodyRot - state.prevBodyRot);
             double lashTarget = Mth.clamp(turnRate * Mth.clamp(hSpeed / 0.22D, 0.0D, 1.0D) * 0.09D, -0.022D, 0.022D);
@@ -327,7 +336,7 @@ public class TailPhysicsEngine {
 
         double totalBackDist = 0.11D + zOffsetBlocks;
         double x = player.getX() + sinBody * totalBackDist;
-        double y = player.getY() + (player.isCrouching() ? 0.59D : 0.73D) + yOffsetBlocks;
+        double y = player.getY() + (player.isCrouching() ? 0.63D : 0.77D) + yOffsetBlocks;
         double z = player.getZ() - cosBody * totalBackDist;
         return new Vec3(x, y, z);
     }

@@ -31,9 +31,10 @@ public class PhysicsChain {
     public static final int MODE_REALISTIC = 1;
     public static final int MODE_LIFTED = 2;
 
-    /** ★ 1.3.3: угол выхода хвоста из поясницы (рад; вниз < 0) — продолжение линии крестца.
-     *  Основание НЕ горизонтально и НЕ сразу в угле несения: хвост «вырастает» из спины. */
-    public static final double EXIT_ANGLE = -0.40D;
+    /** ★ 1.3.5: угол выхода хвоста из поясницы (рад; вниз < 0) — анатомия ДВУНОГОГО зверолюда:
+     *  позвоночник человека вертикален, хвост выходит из крестца/копчика ВНИЗ-НАЗАД (~−35°),
+     *  а не горизонтально, как у четвероногих (Reddit r/Artadvice, tumblr fantasy-anatomy). */
+    public static final double EXIT_ANGLE = -0.62D;
 
     public final List<PhysicsParticle> particles = new ArrayList<>();
 
