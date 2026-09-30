@@ -49,8 +49,21 @@ public class ClientEvents {
         public static void onClientTick(ClientTickEvent.Post event) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
+                // ★ 1.3.0 ОПТИМИЗАЦИЯ: раз в 5 секунд чистим данные ушедших игроков (анти-утечка)…
+                boolean doPrune = mc.player != null && mc.player.tickCount % 100 == 0;
+                java.util.Set<java.util.UUID> present = doPrune ? new java.util.HashSet<>() : null;
                 for (AbstractClientPlayer player : mc.level.players()) {
-                    TailPhysicsEngine.INSTANCE.onClientTick(player);
+                    // ★ 1.3.0 ОПТИМИЗАЦИЯ: не считаем физику для игроков дальше 96 блоков —
+                    //   их хвосты всё равно не видны, а PBD-солвер дорогой:
+                    boolean near = mc.player == null || player == mc.player
+                            || player.distanceToSqr(mc.player) < 96.0D * 96.0D;
+                    if (near) {
+                        TailPhysicsEngine.INSTANCE.onClientTick(player);
+                    }
+                    if (doPrune) present.add(player.getUUID());
+                }
+                if (doPrune) {
+                    TailPhysicsEngine.INSTANCE.pruneMissing(present);
                 }
             }
         }

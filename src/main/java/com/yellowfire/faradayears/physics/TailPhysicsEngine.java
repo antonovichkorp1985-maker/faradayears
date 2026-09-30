@@ -7,6 +7,7 @@ import com.yellowfire.faradayears.physics.core.PhysicsChain;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -15,6 +16,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,6 +89,19 @@ public class TailPhysicsEngine {
         public boolean initialized = false;
         public int activeSegments = 12;
         public int activeTails = 1;
+        // ★ 1.3.0: поза сидя/сна — хвост обвивается вокруг ног (реалистичный режим):
+        public boolean sitting = false;
+        public double sitBlend = 0.0D;
+
+        // ★ 1.3.2 КОНТЕКСТНАЯ ПОЗА (кошка/лиса): несение хвоста зависит от состояния игрока.
+        public double carryAngle = -1.05D;   // угол выноса от горизонтали (рад; вниз < 0)
+        public double tipCurl = 0.35D;       // подкрутка кончика к пятке в покое
+        public double tension = 0.30D;       // мышечный тонус: 0=вяло висит, 1=несётся прямо
+        public double moveBlend = 0.0D;      // 0..1 идёт/бежит
+        public double sneakBlend = 0.0D;     // 0..1 крадётся
+        public double gaitPhase = 0.0D;      // фаза шага (набегает пройденной дистанцией)
+        public double turnLash = 0.0D;       // «руль»: хлыст хвоста против поворота
+        public double scareBlend = 0.0D;     // испуг (урон) → распушение + хлёст
 
         public PlayerPhysicsData() {
             for (int i = 0; i < MAX_TAILS; i++) {
@@ -104,6 +119,11 @@ public class TailPhysicsEngine {
 
     public synchronized PlayerPhysicsData getOrData(AbstractClientPlayer player) {
         return playerData.computeIfAbsent(player.getUUID(), k -> new PlayerPhysicsData());
+    }
+
+    /** ★ 1.3.0: анти-утечка памяти — удаляет физические данные игроков, покинувших мир клиента. */
+    public synchronized void pruneMissing(Set<UUID> presentPlayers) {
+        playerData.keySet().retainAll(presentPlayers);
     }
 
     public synchronized void onClientTick(AbstractClientPlayer player) {
@@ -140,6 +160,13 @@ public class TailPhysicsEngine {
 
         PlayerEarsTailData data = ModAttachments.get(player);
         {
+            // ★ 1.3.0: детект позы сидя/сна (стулья из мебели, спальники, /sit — ставят Pose.SITTING).
+            // Плавный бленд, чтобы хвост «закручивался» и «раскручивался» мягко, а не телепортом:
+            state.sitting = player.isSleeping() || player.getPose() == Pose.SITTING;
+            state.sitBlend += ((state.sitting ? 1.0D : 0.0D) - state.sitBlend) * 0.10D;
+            if (state.sitBlend < 0.005D) state.sitBlend = 0.0D;
+            if (state.sitBlend > 0.995D) state.sitBlend = 1.0D;
+
             Vec3 playerPos = player.position();
             Vec3 root = applyTailOffset(computeTailRoot(player, data), player, data.getTailOffsetX(), data.getTailOffsetY(), data.getTailOffsetZ());
             Vec3 rootVelocity = root.subtract(state.prevRoot);
@@ -149,6 +176,52 @@ public class TailPhysicsEngine {
             if (teleported) {
                 state.prevRoot = root;
                 state.prevPlayerPos = playerPos;
+            }
+
+            // ★ 1.3.2 КОНТЕКСТНАЯ ПОЗА «КОШКА/ЛИСА» (по статьям о реальном поведении):
+            //  - покой: хвост СВИСАЕТ ВНИЗ, кончик подкручен к пятке (у стоящей лисы достаёт до земли);
+            //  - рысь: опущен и вытянут назад, покачивается в такт шагам;
+            //  - спринт/галоп: почти прямой вымпел позади — противовес;
+            //  - прыжок/полёт: вытянут назад стабилизатором;
+            //  - охота (крадучись): прижат к земле, кончик волочится;
+            //  - урон: испуг — распушение (шерсть дыбом) и хлёст из стороны в сторону.
+            Vec3 stepMove = playerPos.subtract(state.prevPlayerPos);
+            double hSpeed = Math.sqrt(stepMove.x * stepMove.x + stepMove.z * stepMove.z);
+            boolean sneaking = player.isShiftKeyDown() || player.isCrouching();
+            boolean airborne = !player.onGround();
+            boolean sprinting = (player.isSprinting() && hSpeed > 0.15D) || hSpeed > 0.27D;
+            boolean walking = hSpeed > 0.045D;
+
+            double carryTarget, curlTarget, tensionTarget;
+            if (state.sitting) {
+                carryTarget = -1.20D; curlTarget = 0.20D; tensionTarget = 0.50D;
+            } else if (airborne) {
+                carryTarget = -0.50D; curlTarget = 0.05D; tensionTarget = 0.72D;
+            } else if (sneaking) {
+                carryTarget = -0.80D; curlTarget = 0.15D; tensionTarget = 0.12D;
+            } else if (sprinting) {
+                carryTarget = -0.08D; curlTarget = 0.00D; tensionTarget = 0.85D;
+            } else if (walking) {
+                carryTarget = -0.40D; curlTarget = 0.12D; tensionTarget = 0.42D;
+            } else {
+                // ★ 1.3.4: покой = настоящее свисание (−80°): складывается сразу за крупом,
+                // а не «холмом» с постепенным набором угла:
+                carryTarget = -1.40D; curlTarget = 0.35D; tensionTarget = 0.30D;
+            }
+            state.carryAngle += (carryTarget - state.carryAngle) * 0.09D;
+            state.tipCurl += (curlTarget - state.tipCurl) * 0.09D;
+            state.tension += (tensionTarget - state.tension) * 0.10D;
+            state.moveBlend += ((walking || sprinting ? 1.0D : 0.0D) - state.moveBlend) * 0.12D;
+            state.sneakBlend += ((sneaking ? 1.0D : 0.0D) - state.sneakBlend) * 0.15D;
+            state.gaitPhase += hSpeed * 6.3D; // фаза шага дистанцией: в покое хвост не качается
+            double turnRate = Mth.wrapDegrees(player.yBodyRot - state.prevBodyRot);
+            double lashTarget = Mth.clamp(turnRate * Mth.clamp(hSpeed / 0.22D, 0.0D, 1.0D) * 0.09D, -0.022D, 0.022D);
+            state.turnLash += (lashTarget - state.turnLash) * 0.30D;
+            if (player.hurtTime > 0) {
+                state.scareBlend += (1.0D - state.scareBlend) * 0.35D;
+            } else {
+                state.scareBlend *= 0.97D;
+                if (state.scareBlend < 0.01D) state.scareBlend = 0.0D;
             }
 
             int userSegments = Math.max(1, Math.min(MAX_USER_SEGMENTS, data.getTailSegments()));
@@ -163,10 +236,15 @@ public class TailPhysicsEngine {
             int activeTails = superVolumetric ? 1 : Math.max(1, Math.min(MAX_TAILS, tailCount));
             state.activeTails = activeTails;
 
-            Vec3 centerDir = computeBackDirection(player, -0.75D);
+            // ★ 1.2.0/1.3.0: режим физики хвоста (0=Классика, 1=Реалистичная кошачья, 2=Поднятая дуга):
+            int physicsMode = Mth.clamp(data.getTailPhysicsMode(), PhysicsChain.MODE_CLASSIC, PhysicsChain.MODE_LIFTED);
+            double backPitch = physicsMode == PhysicsChain.MODE_LIFTED ? 0.0D
+                    : (physicsMode == PhysicsChain.MODE_REALISTIC ? state.carryAngle : -0.75D);
+            Vec3 centerDir = computeBackDirection(player, backPitch);
 
             if (!state.initialized || teleported) {
                 for (int t = 0; t < MAX_TAILS; t++) {
+                    state.tails[t].chain.physicsMode = physicsMode;
                     double fanRad = ProceduralTailRenderer.getFanAngleRad(t, activeTails, data.getTailFanSpread(), false);
                     Vec3 baseDir = centerDir;
                     if (fanRad != 0.0D && !superVolumetric) {
@@ -175,7 +253,7 @@ public class TailPhysicsEngine {
                         baseDir = new Vec3(centerDir.x * cos - centerDir.z * sin, centerDir.y, centerDir.x * sin + centerDir.z * cos).normalize();
                     }
                     state.tails[t].chain.reset(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
-                    copyChainToInstance(state.tails[t], root, true);
+                    copyChainToInstance(state.tails[t], root, true, 0.0D);
                 }
                 state.root = root;
                 state.prevRoot = root;
@@ -196,6 +274,17 @@ public class TailPhysicsEngine {
                     baseDir = new Vec3(centerDir.x * cos - centerDir.z * sin, centerDir.y, centerDir.x * sin + centerDir.z * cos).normalize();
                 }
 
+                inst.chain.physicsMode = physicsMode;
+                // ★ 1.3.2: передаём цепочке контекстную позу (веер хвостов качается вразнобой):
+                inst.chain.carryAngle = state.carryAngle;
+                inst.chain.tipCurl = state.tipCurl;
+                inst.chain.tension = state.tension;
+                inst.chain.moveBlend = state.moveBlend;
+                inst.chain.sneakBlend = state.sneakBlend;
+                inst.chain.gaitPhase = state.gaitPhase;
+                inst.chain.swayPhase = t * 0.9D;
+                inst.chain.turnLash = state.turnLash;
+                inst.chain.scareBlend = (physicsMode == PhysicsChain.MODE_REALISTIC) ? state.scareBlend : 0.0D;
                 inst.chain.ensureSize(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
                 inst.chain.damping = player.isInWaterOrBubble() ? 0.60D : 0.845D;
                 inst.chain.iterations = 11;
@@ -203,12 +292,15 @@ public class TailPhysicsEngine {
                 if (data.isAnimate()) {
                     Vec3 gravity = new Vec3(0, player.isFallFlying() ? -0.050D : (player.onGround() ? -0.070D : -0.060D), 0);
                     double baseStiffness = player.onGround() ? 0.45D : 0.36D;
+                    // ★ 1.3.0: обвивание вокруг ног — только в реалистичном режиме:
+                    double sitAmount = (physicsMode == PhysicsChain.MODE_REALISTIC) ? state.sitBlend : 0.0D;
                     inst.chain.simulateTailRope(player.level(), player, root, rootVelocity, gravity, baseDir, baseStiffness,
-                            data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t);
+                            data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t, sitAmount);
                 } else {
                     inst.chain.reset(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
                 }
-                copyChainToInstance(inst, root, false);
+                copyChainToInstance(inst, root, false,
+                        (physicsMode == PhysicsChain.MODE_REALISTIC) ? 0.30D * state.scareBlend : 0.0D);
             }
 
             state.root = root;
@@ -252,11 +344,12 @@ public class TailPhysicsEngine {
         return new Vec3(Math.sin(bodyYawRad), down, -Math.cos(bodyYawRad)).normalize();
     }
 
-    private void copyChainToInstance(TailChainInstance inst, Vec3 root, boolean initializePrevious) {
+    private void copyChainToInstance(TailChainInstance inst, Vec3 root, boolean initializePrevious, double puff) {
         for (int i = 0; i < MAX_PHYSICAL_SEGMENTS; i++) {
             int source = Math.min(i, Math.max(0, inst.chain.particles.size() - 1));
             Vec3 point = inst.chain.particles.isEmpty() ? root : inst.chain.getPoint(source);
-            double radius = inst.chain.particles.isEmpty() ? 0.20D : inst.chain.getRadius(source);
+            // ★ 1.3.2: puff>0 — «шерсть дыбом» при испуге (пилоэрекция у кошек):
+            double radius = inst.chain.particles.isEmpty() ? 0.20D : inst.chain.getRadius(source) * (1.0D + puff);
             boolean ground = !inst.chain.particles.isEmpty() && inst.chain.isGround(source);
 
             inst.points[i] = point;
