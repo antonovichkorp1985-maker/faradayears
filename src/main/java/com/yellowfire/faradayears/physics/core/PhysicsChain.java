@@ -180,7 +180,7 @@ public class PhysicsChain {
                 // Физический противовес остаётся даже при выключенной мимике.
                 double fx = turnLash;
                 if (wagAxis != 3) {
-                    fx += Math.sin(tick * 0.045D + swayPhase - distal * 2.2D) * 0.0012D * idleScale;
+                    fx += Math.sin(tick * 0.045D + swayPhase - distal * 2.2D) * 0.0022D * idleScale;
                     if (flickTick > 0) {
                         double flickEnv = Math.sin(flickTick * 0.85D) * (flickTick / 12.0D);
                         fx += flickEnv * 0.006D * smoothstep(0.55D, 1.0D, distal) * idleScale;
@@ -192,6 +192,13 @@ public class PhysicsChain {
                     }
                 }
                 lateralWag = lateralWag.add(sideVector.scale(fx * distal));
+                if (wagAxis != 3) {
+                    // Отдельная очень медленная мимика кончика вверх/вниз делает хвост
+                    // выразительным, не раскачивая тяжёлое основание целиком.
+                    double tipExpression = Math.cos(tick * 0.037D + swayPhase)
+                            * 0.0014D * idleScale * smoothstep(0.58D, 1.0D, distal);
+                    lateralWag = lateralWag.add(upVector.scale(tipExpression));
+                }
             }
             double gScale;
             if (physicsMode == MODE_CLASSIC) {

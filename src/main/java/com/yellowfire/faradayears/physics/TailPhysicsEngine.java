@@ -229,8 +229,8 @@ public class TailPhysicsEngine {
             } else {
                 // В покое касается преимущественно кончик. Чем хвост длиннее, тем сильнее
                 // мышцы основания несут его назад, вместо укладки половины длины на землю.
-                carryTarget = -0.78D + 0.20D * lengthSupport;
-                curlTarget = 0.22D; tensionTarget = 0.38D + 0.18D * lengthSupport;
+                carryTarget = -0.62D + 0.35D * lengthSupport;
+                curlTarget = 0.18D; tensionTarget = 0.42D + 0.28D * lengthSupport;
                 if (raining) {
                     // Мокрый мех спокойнее и чуть ниже, но дождь не запускает отдельное махание.
                     carryTarget -= 0.08D;
