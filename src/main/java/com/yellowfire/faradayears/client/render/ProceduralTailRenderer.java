@@ -155,9 +155,9 @@ public class ProceduralTailRenderer {
             }
             C[j] = rawC;
 
-            double rStart = radiusFor(data, s, activeSegments) * radiusMultiplier;
-            double rEnd = radiusFor(data, Math.min(s + 1, activeSegments - 1), activeSegments) * radiusMultiplier;
-            if (j == M - 1) rEnd = radiusFor(data, activeSegments - 1, activeSegments) * radiusMultiplier;
+            double rStart = getVisualRadius(data, s, activeSegments) * radiusMultiplier;
+            double rEnd = getVisualRadius(data, Math.min(s + 1, activeSegments - 1), activeSegments) * radiusMultiplier;
+            if (j == M - 1) rEnd = getVisualRadius(data, activeSegments - 1, activeSegments) * radiusMultiplier;
             R[j] = Mth.lerp(t, rStart, rEnd);
 
             double overallT = j / (double) (M - 1);
@@ -295,7 +295,7 @@ public class ProceduralTailRenderer {
         return root.add(rotated).add(offset);
     }
 
-    private static double radiusFor(PlayerEarsTailData data, int segment, int activeSegments) {
+    public static double getVisualRadius(PlayerEarsTailData data, int segment, int activeSegments) {
         double t = activeSegments <= 1 ? 0.0D : segment / (double) (activeSegments - 1);
         double taper = Mth.clamp(data.getTailTaper(), 0.35D, 1.45D);
         double taperFactor = (taper - 0.35D) / (1.45D - 0.35D);

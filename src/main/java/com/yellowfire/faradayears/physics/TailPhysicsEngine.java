@@ -332,6 +332,7 @@ public class TailPhysicsEngine {
                 inst.chain.turnLash = state.turnLash;
                 inst.chain.scareBlend = (physicsMode == PhysicsChain.MODE_REALISTIC) ? state.scareBlend : 0.0D;
                 inst.chain.ensureSize(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
+                applySoftTissueCollisionProfile(inst.chain, data, activePhysicalSegments, superVolumetric);
                 inst.chain.damping = player.isInWaterOrBubble() ? 0.60D : 0.845D;
                 inst.chain.iterations = 11;
 
@@ -344,6 +345,7 @@ public class TailPhysicsEngine {
                             data.getTailWagAxis(), data.getTailWagAmplitude(), data.getTailWagSpeed(), t, sitAmount);
                 } else {
                     inst.chain.reset(root, baseDir, activePhysicalSegments, segmentLength, baseRadius);
+                    applySoftTissueCollisionProfile(inst.chain, data, activePhysicalSegments, superVolumetric);
                 }
                 copyChainToInstance(inst, root, false,
                         (physicsMode == PhysicsChain.MODE_REALISTIC) ? 0.30D * state.scareBlend : 0.0D);
@@ -356,6 +358,24 @@ public class TailPhysicsEngine {
             state.prevPlayerPos = playerPos;
             state.prevBodyRot = player.yBodyRot;
             state.prevHeadRot = player.yHeadRot;
+        }
+    }
+
+    /**
+     * Согласует физическую оболочку мягких тканей с рендер-профилем. Раньше физические
+     * сферы были почти вдвое тоньше супер-плюшевого ядра, поэтому центральная цепь уже
+     * сталкивалась с землёй, а видимый мех продолжал уходить под поверхность.
+     */
+    private void applySoftTissueCollisionProfile(PhysicsChain chain, PlayerEarsTailData data,
+                                                 int activeSegments, boolean superVolumetric) {
+        int count = Math.min(activeSegments, chain.particles.size());
+        double softTissueFraction = superVolumetric ? 1.10D : 0.90D;
+        for (int i = 0; i < count; i++) {
+            double visualCoreRadius = ProceduralTailRenderer.getVisualRadius(data, i, activeSegments);
+            // У супер-хвоста видимое центральное ядро рендерится с ×1.28; collision envelope
+            // равен ~86% ядра. Декоративные боковые слои в жёсткую коллизию не включаем.
+            chain.particles.get(i).radius = Mth.clamp(
+                    visualCoreRadius * softTissueFraction, 0.055D, 0.42D);
         }
     }
 
