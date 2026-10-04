@@ -36,6 +36,8 @@ public class EarsTailCustomizationScreen extends Screen {
     private TextureCanvasWidget canvasWidget;
     /** Local draft is loaded once. Rebuilding widgets must never overwrite a just-clicked value. */
     private boolean localDataLoaded = false;
+    /** Rebuilding inside a button callback mutates Screen's child list during mouse dispatch. */
+    private boolean widgetRebuildRequested = false;
     private float playerPreviewRotation = -35.0f; // Yaw
     private float previewPitch = 10.0f;           // Pitch
     private float previewRoll = 0.0f;             // Roll
@@ -75,32 +77,32 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.faraday"), b -> {
                 localData.applyFaradayPreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos, btnWidth, 22).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.fox"), b -> {
                 localData.applyFoxPreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 26, btnWidth, 20).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.wolf"), b -> {
                 localData.applyWolfPreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 48, btnWidth, 20).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.bunny"), b -> {
                 localData.applyBunnyPreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 70, btnWidth, 20).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.kitsune"), b -> {
                 localData.applyKitsunePreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 92, btnWidth, 20).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.felix"), b -> {
                 localData.applyFelixPreset();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 114, btnWidth, 20).build());
         } else if (activeTab == 1) {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.ears.show", onOff(localData.isShowEars())), b -> {
@@ -126,7 +128,7 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.ears.reset"), b -> {
                 localData.resetEarsOnly();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 170, btnWidth, 18).build());
         } else if (activeTab == 2) {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.show", onOff(localData.isShowTail())), b -> {
@@ -141,7 +143,7 @@ public class EarsTailCustomizationScreen extends Screen {
                 localData.setTailCount(counts[nextIdx]);
                 b.setMessage(Component.translatable("gui.faradayears.tail.count", Component.translatable(getTailCountKey(localData.getTailCount()))));
                 applyLiveUpdate();
-                init(); // показать/скрыть настройки веера
+                requestWidgetRebuild(); // показать/скрыть настройки веера
             }).bounds(panelLeft, topPos + 20, btnWidth, 18).build());
 
             // Два понятных режима — свободная классика и скелетно-мышечный хвост.
@@ -177,7 +179,7 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tail.reset"), b -> {
                 localData.resetTailOnly();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos + 202, btnWidth, 18).build());
         } else if (activeTab == 3) {
             // ★ 1.2.0: тумблер применения кастомной текстуры (единый лист 64x64):
@@ -209,7 +211,7 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.gender", Component.translatable(getGenderKey(localData.getGender()))), b -> {
                 localData.setGender((localData.getGender() + 1) % 4);
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos, btnWidth, 20).build());
 
             if (localData.getGender() == 1 || localData.getGender() == 3) {
@@ -251,14 +253,14 @@ public class EarsTailCustomizationScreen extends Screen {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.reset"), b -> {
                 localData.resetBodyOnly();
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, resetY, btnWidth, 18).build());
         } else if (activeTab == 5) {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.show", onOff(localData.isShowPouch())), b -> {
                 localData.setShowPouch(!localData.isShowPouch());
                 b.setMessage(Component.translatable("gui.faradayears.pouch.show", onOff(localData.isShowPouch())));
                 applyLiveUpdate();
-                init();
+                requestWidgetRebuild();
             }).bounds(panelLeft, topPos, btnWidth, 20).build());
 
             if (localData.isShowPouch()) {
@@ -273,12 +275,20 @@ public class EarsTailCustomizationScreen extends Screen {
                 addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.reset"), b -> {
                     localData.resetPouchOnly();
                     applyLiveUpdate();
-                    init();
+                    requestWidgetRebuild();
                 }).bounds(panelLeft, topPos + 152, btnWidth, 18).build());
             }
 
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.pouch.goto_body"), b -> switchTab(4)).bounds(panelLeft, topPos + (localData.isShowPouch() ? 174 : 26), btnWidth, 18).build());
         }
+
+        // Three non-overlapping bottom actions. The old preview button extended to width/2-40,
+        // while Reset All started at width/2-165: they overlapped by 125 px at every normal
+        // resolution, so the topmost widget won depending on the clicked part of the label.
+        int bottomGap = 8;
+        int bottomMargin = 18;
+        int bottomWidth = Math.max(80, (width - bottomMargin * 2 - bottomGap * 2) / 3);
+        int bottomY = height - 28;
 
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.view.reset"), b -> {
             this.playerPreviewRotation = -35.0f;
@@ -287,19 +297,19 @@ public class EarsTailCustomizationScreen extends Screen {
             this.previewScale = 56.0f;
             this.previewOffsetX = 0.0f;
             this.previewOffsetY = 0.0f;
-        }).bounds(18, height - 28, width / 2 - 58, 20).build());
+        }).bounds(bottomMargin, bottomY, bottomWidth, 20).build());
 
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.reset_all"), b -> {
             // A preset only changes part of the model. "Reset all" must restore every field,
             // including body, pouch, custom texture and the realistic default physics mode.
             localData.copyFrom(new PlayerEarsTailData());
             applyLiveUpdate();
-            init();
-        }).bounds(width / 2 - 165, height - 28, 155, 20).build());
+            requestWidgetRebuild();
+        }).bounds(bottomMargin + bottomWidth + bottomGap, bottomY, bottomWidth, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.save_close"), b -> {
             saveAndSendToServer();
             onClose();
-        }).bounds(width / 2 + 10, height - 28, 155, 20).build());
+        }).bounds(bottomMargin + (bottomWidth + bottomGap) * 2, bottomY, bottomWidth, 20).build());
 
         if (canvasWidget != null && activeTab == 3) {
             canvasWidget.importFromBase64(localData.getCustomTextureBase64());
@@ -371,6 +381,24 @@ public class EarsTailCustomizationScreen extends Screen {
     private void switchTab(int tab) {
         if (this.activeTab != tab) {
             this.activeTab = tab;
+            requestWidgetRebuild();
+        }
+    }
+
+    /**
+     * Never call init() from a widget's onPress handler. The vanilla mouse dispatcher is
+     * iterating/focusing the current child list at that moment; clearing that list there
+     * leaves a stale pressed/focused widget and causes the characteristic every-other-click.
+     */
+    private void requestWidgetRebuild() {
+        this.widgetRebuildRequested = true;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (widgetRebuildRequested) {
+            widgetRebuildRequested = false;
             this.init();
         }
     }
