@@ -312,9 +312,11 @@ public class PhysicsChain {
                         // основания. Прежний закон обнулял мышцы у кончика, поэтому длинный
                         // хвост неизбежно укладывал последние метры на землю независимо от
                         // заданного тонуса. У длинного хвоста сохраняем распределённый минимум.
-                        double distalSupport = 0.08D + 0.46D * lengthSupport;
+                        // Несущие мышцы работают почти до последней четверти; кончик снова
+                        // получает свободу и может плавно опуститься, вместо прямой «колбасы».
+                        double distalSupport = 0.06D + 0.16D * lengthSupport;
                         double proximal = distalSupport
-                                + (1.0D - distalSupport) * (1.0D - smoothstep(0.52D, 1.0D, distal));
+                                + (1.0D - distalSupport) * (1.0D - smoothstep(0.72D, 1.0D, distal));
                         double muscleStrength = PASSIVE_REALISTIC_TAIL ? 0.0D
                                 : baseStiffness * (0.009D + 0.042D * tension) * proximal;
                         if (crouching) muscleStrength *= 0.88D;
