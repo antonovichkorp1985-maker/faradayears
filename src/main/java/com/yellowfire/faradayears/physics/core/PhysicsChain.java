@@ -57,6 +57,8 @@ public class PhysicsChain {
     public double tipCurl = 0.35D;
     /** «Тонус» мышц 0..1: 0 = вяло висит под своей тяжестью, 1 = несётся прямо (спринт/прыжок). */
     public double tension = 0.30D;
+    /** 0..1 — дополнительная распределённая поддержка, необходимая длинному хвосту. */
+    public double lengthSupport = 0.0D;
     /** 0..1 — движется ли игрок (для походочного покачивания в такт шагам). */
     public double moveBlend = 0.0D;
     /** 0..1 — крадётся (хвост прижат к земле, как кошка на охоте). */
@@ -290,7 +292,8 @@ public class PhysicsChain {
                     if (i == 0) {
                         Vec3 rootDir = skeletalRootDirection(baseDir);
                         double rootMuscle = PASSIVE_REALISTIC_TAIL ? 0.0D
-                                : Mth.clamp(baseStiffness * (0.08D + 0.18D * tension), 0.03D, 0.22D);
+                                : Mth.clamp(baseStiffness * (0.10D + 0.22D * tension
+                                + 0.06D * lengthSupport), 0.04D, 0.28D);
                         currentDir = normalizedLerp(currentDir, rootDir, rootMuscle);
                     } else {
                         Vec3 previousAnchor = (i == 1) ? root : particles.get(i - 2).position;
@@ -305,11 +308,17 @@ public class PhysicsChain {
                         // Мышечное намерение задаёт локальную кривизну, не мировую позицию.
                         // carryAngle определяет направление работы мышц, но сила ограничена.
                         Vec3 muscleAxis = dirFromAngle(horizontalBack(baseDir), carryAngle);
-                        double proximal = 1.0D - smoothstep(0.45D, 1.0D, distal);
+                        // У кошачьего хвоста длинные сухожилия передают усилие далеко от
+                        // основания. Прежний закон обнулял мышцы у кончика, поэтому длинный
+                        // хвост неизбежно укладывал последние метры на землю независимо от
+                        // заданного тонуса. У длинного хвоста сохраняем распределённый минимум.
+                        double distalSupport = 0.08D + 0.46D * lengthSupport;
+                        double proximal = distalSupport
+                                + (1.0D - distalSupport) * (1.0D - smoothstep(0.52D, 1.0D, distal));
                         double muscleStrength = PASSIVE_REALISTIC_TAIL ? 0.0D
-                                : baseStiffness * (0.006D + 0.030D * tension) * proximal;
-                        if (crouching) muscleStrength *= 0.85D;
-                        currentDir = normalizedLerp(currentDir, muscleAxis, Mth.clamp(muscleStrength, 0.0D, 0.045D));
+                                : baseStiffness * (0.009D + 0.042D * tension) * proximal;
+                        if (crouching) muscleStrength *= 0.88D;
+                        currentDir = normalizedLerp(currentDir, muscleAxis, Mth.clamp(muscleStrength, 0.0D, 0.060D));
                         currentDir = limitBend(previousDir, currentDir, maxBend);
                     }
                     p.position = anchor.add(currentDir.scale(segLen));

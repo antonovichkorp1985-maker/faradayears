@@ -324,6 +324,7 @@ public class TailPhysicsEngine {
                 inst.chain.carryAngle = state.carryAngle;
                 inst.chain.tipCurl = state.tipCurl;
                 inst.chain.tension = state.tension;
+                inst.chain.lengthSupport = lengthSupport;
                 inst.chain.moveBlend = state.moveBlend;
                 inst.chain.sneakBlend = state.sneakBlend;
                 inst.chain.gaitPhase = state.gaitPhase;
