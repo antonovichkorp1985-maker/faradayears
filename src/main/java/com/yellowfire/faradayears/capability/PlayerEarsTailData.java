@@ -62,7 +62,7 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
 
     // 1.4.0: 0 = Классика (свободная нить), 1 = Реалистичная скелетно-мышечная.
     // Удалённое значение 2 при загрузке мигрирует в реалистичный режим.
-    private int tailPhysicsMode = 0;
+    private int tailPhysicsMode = 1;
     // ★ 1.2.0: применять ли кастомную текстуру 64x64 (единый лист ушек+хвоста):
     private boolean customTextureEnabled = false;
 
@@ -301,6 +301,7 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         this.tailWagAxis = 3;
         this.tailWagAmplitude = 14.0f;
         this.tailWagSpeed = 1.5f;
+        this.tailPhysicsMode = 1;
     }
 
     public void resetEarsOnly() {

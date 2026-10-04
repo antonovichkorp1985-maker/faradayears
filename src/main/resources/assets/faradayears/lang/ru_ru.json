@@ -1,26 +1,21 @@
 {
   "key.categories.faradayears": "Faraday Ears & Tail",
   "key.faradayears.open_customizer": "Открыть настройку ушек и хвоста",
-
   "gui.faradayears.title": "Настройка ушек и хвоста Фарадея",
-
   "gui.faradayears.tab.presets": "★ Пресет",
   "gui.faradayears.tab.ears": "🐱 Ушки",
   "gui.faradayears.tab.tail": "🦊 Хвост",
   "gui.faradayears.tab.body": "👗 Фигура",
   "gui.faradayears.tab.pouch": "🎒 Мешочек",
   "gui.faradayears.tab.texture": "🎨 Цвет",
-
   "gui.faradayears.on": "ВКЛ",
   "gui.faradayears.off": "ВЫКЛ",
-
   "gui.faradayears.preset.faraday": "★ Фарадей (Супер-объёмный!)",
   "gui.faradayears.preset.fox": "🦊 Лисёнок / Котик",
   "gui.faradayears.preset.wolf": "🐺 Серый Волк",
   "gui.faradayears.preset.bunny": "🐰 Кролик",
   "gui.faradayears.preset.kitsune": "✨ Девятихвостая Кицунэ",
   "gui.faradayears.preset.felix": "🐱 Феликс",
-
   "gui.faradayears.ears.show": "✔ Ушки на голове: %s",
   "gui.faradayears.ears.shape": "Форма ушек: %s",
   "gui.faradayears.ear_shape.0": "Фарадей (с кисточками)",
@@ -28,7 +23,6 @@
   "gui.faradayears.ear_shape.2": "Кошачьи / острые",
   "gui.faradayears.ear_shape.3": "Лисьи / пушистые",
   "gui.faradayears.ears.reset": "🔄 Сбросить только настройки ушек",
-
   "gui.faradayears.tail.show": "✔ Хвост на спине: %s",
   "gui.faradayears.tail.count": "Режим: %s",
   "gui.faradayears.tail_count.10": "★ 1 ХВОСТ (Супер-объёмный плюшевый!)",
@@ -57,7 +51,6 @@
   "gui.faradayears.wag.2": "Круговое (3D-волна)",
   "gui.faradayears.wag.3": "Выключено (Без махания)",
   "gui.faradayears.tail.reset": "🔄 Сбросить только настройки хвоста",
-
   "gui.faradayears.texture.toggle": "✔ Кастомная текстура: %s",
   "gui.faradayears.texture.template": "💾 Скачать шаблон 64x64 (4 зоны)",
   "gui.faradayears.texture.load": "📂 Загрузить faraday_custom.png из папки игры",
@@ -77,7 +70,6 @@
   "gui.faradayears.indicator.color": "Цвет",
   "gui.faradayears.hint.vertical": "Верх канваса = корень хвоста, низ = кончик.",
   "gui.faradayears.hint.horizontal": "Горизонталь = оборот вокруг хвоста.",
-
   "gui.faradayears.body.gender": "Гендер: %s",
   "gui.faradayears.gender.0": "Нейтральный (Без изменений)",
   "gui.faradayears.gender.1": "♀ Женский (Грудь и Бёдра)",
@@ -88,19 +80,15 @@
   "gui.faradayears.body.shoulders": "✔ Атлетический торс/плечи: %s",
   "gui.faradayears.body.goto_pouch": "🎒 Перейти к настройке поясного мешочка ➡",
   "gui.faradayears.body.reset": "🔄 Сбросить настройки фигуры",
-
   "gui.faradayears.pouch.show": "✔ Поясной мешочек спереди: %s",
   "gui.faradayears.pouch.reset": "🔄 Сбросить только настройки мешочка",
   "gui.faradayears.pouch.goto_body": "👗 Перейти к настройкам фигуры/тела ➡",
-
   "gui.faradayears.view.reset": "🔄 Сбросить вид 3D-модели",
   "gui.faradayears.reset_all": "🔄 Сбросить всё по умолчанию",
   "gui.faradayears.save_close": "✔ Сохранить и закрыть",
-
   "gui.faradayears.preview.help": "🔴 3D Вид: ЛКМ=Вращение X/Y | ПКМ=Наклон Z/Зум | СКМ=Сдвиг",
   "gui.faradayears.status.shape": "Форма: %s",
   "gui.faradayears.status.mode": "Режим: %s",
-
   "slider.faradayears.ear_rot_z": "Размах ушек вбок (Z): %s",
   "slider.faradayears.ear_rot_x": "Наклон ушек вперёд/назад (X): %s",
   "slider.faradayears.ear_rot_y": "Поворот ушек вокруг оси (Y): %s",
@@ -128,7 +116,6 @@
   "slider.faradayears.pouch_scale_x": "Ширина мешочка X: %s",
   "slider.faradayears.pouch_scale_y": "Высота мешочка Y: %s",
   "slider.faradayears.pouch_scale_z": "Глубина мешочка Z: %s",
-
   "gui.faradayears.canvas.title": "Полотно текстуры",
   "gui.faradayears.canvas.zone.0": "УШИ: внешний мех",
   "gui.faradayears.canvas.zone.1": "УШИ: внутренний мех",
@@ -140,5 +127,7 @@
   "gui.faradayears.canvas.col.0": "Фар",
   "gui.faradayears.canvas.col.1": "Киц",
   "gui.faradayears.canvas.col.2": "Влк",
-  "gui.faradayears.canvas.col.3": "Крл"
+  "gui.faradayears.canvas.col.3": "Крл",
+  "gui.faradayears.color.picker": "Выбор цвета",
+  "gui.faradayears.canvas.uv.around": "Вокруг хвоста →"
 }

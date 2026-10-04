@@ -189,6 +189,31 @@ public class TextureCanvasWidget extends AbstractWidget {
                 } else if (zoneSubs[z] != null) {
                     guiGraphics.drawString(font, zoneSubs[z], x + 4, zy + 14, 0xFFDDDDDD, false);
                 }
+
+                // Читаемая UV-развёртка поверх абстрактных квадратов.
+                if (z < 2) {
+                    // Каждый 16px-столбец — отдельная форма уха; треугольник показывает
+                    // ориентацию: вершина сверху, основание у головы снизу.
+                    for (int c = 0; c < 4; c++) {
+                        int left = x + c * colW + 3;
+                        int right = x + (c + 1) * colW - 3;
+                        int mid = (left + right) / 2;
+                        int top = zy + 12;
+                        int bottom = zy + zoneH - 2;
+                        guiGraphics.renderOutline(left, top, right - left, bottom - top, 0xCCFFFFFF);
+                        guiGraphics.fill(mid, top, mid + 1, bottom, 0xAAFFFFFF);
+                    }
+                } else {
+                    // Хвост — цилиндрическая развёртка: X идёт вокруг хвоста, Y — от
+                    // основания вниз к кончику. Четверти помогают красить верх/бока/низ.
+                    for (int c = 1; c < 4; c++) {
+                        int seamX = x + c * width / 4;
+                        guiGraphics.fill(seamX, zy + 12, seamX + 1, zy + zoneH, 0xAAFFFFFF);
+                    }
+                    guiGraphics.drawCenteredString(font,
+                            Component.translatable("gui.faradayears.canvas.uv.around"),
+                            x + width / 2, zy + zoneH - 10, 0xFFFFFFFF);
+                }
             }
         }
     }

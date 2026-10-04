@@ -187,17 +187,14 @@ public class EarsTailCustomizationScreen extends Screen {
             });
             addRenderableWidget(canvasWidget);
 
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.dark"), b -> canvasWidget.setCurrentColor(0x262220)).bounds(panelLeft + 156, topPos + 62, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.orange"), b -> canvasWidget.setCurrentColor(0xEE8C1E)).bounds(panelLeft + 156, topPos + 82, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.gold"), b -> canvasWidget.setCurrentColor(0xF1C40F)).bounds(panelLeft + 156, topPos + 102, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.red"), b -> canvasWidget.setCurrentColor(0xC44D14)).bounds(panelLeft + 156, topPos + 122, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.color.white"), b -> canvasWidget.setCurrentColor(0xFFFFFF)).bounds(panelLeft + 156, topPos + 142, 88, 18).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tool.eraser"), b -> canvasWidget.setCurrentColorTransparent()).bounds(panelLeft + 156, topPos + 162, 88, 18).build());
-            // ★ 1.3.0: «поверхностный слой» — подписи зон поверх канваса (какая область за что отвечает):
+            // Полноценный HSV picker вместо пяти фиксированных цветов.
+            addRenderableWidget(new ColorPickerWidget(panelLeft + 156, topPos + 62, 88, 112,
+                    rgb -> canvasWidget.setCurrentColor(rgb)));
+            addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tool.eraser"), b -> canvasWidget.setCurrentColorTransparent()).bounds(panelLeft + 156, topPos + 176, 88, 18).build());
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.texture.zones", onOff(canvasWidget.isZoneOverlayVisible())), b -> {
                 canvasWidget.toggleZoneOverlay();
                 b.setMessage(Component.translatable("gui.faradayears.texture.zones", onOff(canvasWidget.isZoneOverlayVisible())));
-            }).bounds(panelLeft + 156, topPos + 182, 88, 18).build());
+            }).bounds(panelLeft + 156, topPos + 196, 88, 18).build());
         } else if (activeTab == 4) {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.gender", Component.translatable(getGenderKey(localData.getGender()))), b -> {
                 localData.setGender((localData.getGender() + 1) % 4);

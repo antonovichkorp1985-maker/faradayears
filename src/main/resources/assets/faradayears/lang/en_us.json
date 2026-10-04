@@ -1,26 +1,21 @@
 {
   "key.categories.faradayears": "Faraday Ears & Tail",
   "key.faradayears.open_customizer": "Open Ears & Tail Customizer",
-
   "gui.faradayears.title": "Faraday Ears & Tail Customizer",
-
   "gui.faradayears.tab.presets": "★ Presets",
   "gui.faradayears.tab.ears": "🐱 Ears",
   "gui.faradayears.tab.tail": "🦊 Tail",
   "gui.faradayears.tab.body": "👗 Body",
   "gui.faradayears.tab.pouch": "🎒 Pouch",
   "gui.faradayears.tab.texture": "🎨 Texture",
-
   "gui.faradayears.on": "ON",
   "gui.faradayears.off": "OFF",
-
   "gui.faradayears.preset.faraday": "★ Faraday (Super-volumetric!)",
   "gui.faradayears.preset.fox": "🦊 Fox / Kitten",
   "gui.faradayears.preset.wolf": "🐺 Grey Wolf",
   "gui.faradayears.preset.bunny": "🐰 Bunny",
   "gui.faradayears.preset.kitsune": "✨ Nine-tailed Kitsune",
   "gui.faradayears.preset.felix": "🐱 Felix",
-
   "gui.faradayears.ears.show": "✔ Ears on head: %s",
   "gui.faradayears.ears.shape": "Ear shape: %s",
   "gui.faradayears.ear_shape.0": "Faraday (with tufts)",
@@ -28,7 +23,6 @@
   "gui.faradayears.ear_shape.2": "Cat / pointed",
   "gui.faradayears.ear_shape.3": "Fox / fluffy",
   "gui.faradayears.ears.reset": "🔄 Reset ear settings only",
-
   "gui.faradayears.tail.show": "✔ Tail on back: %s",
   "gui.faradayears.tail.count": "Mode: %s",
   "gui.faradayears.tail_count.10": "★ 1 TAIL (Super-volumetric plush!)",
@@ -57,7 +51,6 @@
   "gui.faradayears.wag.2": "Circular (3D wave)",
   "gui.faradayears.wag.3": "Off (no wagging)",
   "gui.faradayears.tail.reset": "🔄 Reset tail settings only",
-
   "gui.faradayears.texture.toggle": "✔ Custom texture: %s",
   "gui.faradayears.texture.template": "💾 Download 64x64 template (4 zones)",
   "gui.faradayears.texture.load": "📂 Load faraday_custom.png from game folder",
@@ -77,7 +70,6 @@
   "gui.faradayears.indicator.color": "Color",
   "gui.faradayears.hint.vertical": "Canvas top = tail root, bottom = tip.",
   "gui.faradayears.hint.horizontal": "Horizontal = wrap around the tail.",
-
   "gui.faradayears.body.gender": "Gender: %s",
   "gui.faradayears.gender.0": "Neutral (no changes)",
   "gui.faradayears.gender.1": "♀ Female (Chest & Hips)",
@@ -88,19 +80,15 @@
   "gui.faradayears.body.shoulders": "✔ Athletic torso/shoulders: %s",
   "gui.faradayears.body.goto_pouch": "🎒 Go to pouch settings ➡",
   "gui.faradayears.body.reset": "🔄 Reset body settings",
-
   "gui.faradayears.pouch.show": "✔ Front waist pouch: %s",
   "gui.faradayears.pouch.reset": "🔄 Reset pouch settings only",
   "gui.faradayears.pouch.goto_body": "👗 Go to body/figure settings ➡",
-
   "gui.faradayears.view.reset": "🔄 Reset 3D view",
   "gui.faradayears.reset_all": "🔄 Reset everything to defaults",
   "gui.faradayears.save_close": "✔ Save and close",
-
   "gui.faradayears.preview.help": "🔴 3D View: LMB=Rotate X/Y | RMB=Tilt Z/Zoom | MMB=Pan",
   "gui.faradayears.status.shape": "Shape: %s",
   "gui.faradayears.status.mode": "Mode: %s",
-
   "slider.faradayears.ear_rot_z": "Ear spread sideways (Z): %s",
   "slider.faradayears.ear_rot_x": "Ear tilt forward/back (X): %s",
   "slider.faradayears.ear_rot_y": "Ear rotation around axis (Y): %s",
@@ -128,7 +116,6 @@
   "slider.faradayears.pouch_scale_x": "Pouch width X: %s",
   "slider.faradayears.pouch_scale_y": "Pouch height Y: %s",
   "slider.faradayears.pouch_scale_z": "Pouch depth Z: %s",
-
   "gui.faradayears.canvas.title": "Texture canvas",
   "gui.faradayears.canvas.zone.0": "EARS: outer fur",
   "gui.faradayears.canvas.zone.1": "EARS: inner fur",
@@ -140,5 +127,7 @@
   "gui.faradayears.canvas.col.0": "Frd",
   "gui.faradayears.canvas.col.1": "Fox",
   "gui.faradayears.canvas.col.2": "Wlf",
-  "gui.faradayears.canvas.col.3": "Bny"
+  "gui.faradayears.canvas.col.3": "Bny",
+  "gui.faradayears.color.picker": "Color picker",
+  "gui.faradayears.canvas.uv.around": "Around tail →"
 }
