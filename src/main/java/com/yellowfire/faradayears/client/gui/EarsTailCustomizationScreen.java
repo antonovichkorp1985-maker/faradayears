@@ -34,6 +34,8 @@ public class EarsTailCustomizationScreen extends Screen {
     private int activeTab = 0; // 0 = Пресеты, 1 = Ушки, 2 = Хвост, 3 = Текстура
 
     private TextureCanvasWidget canvasWidget;
+    /** Local draft is loaded once. Rebuilding widgets must never overwrite a just-clicked value. */
+    private boolean localDataLoaded = false;
     private float playerPreviewRotation = -35.0f; // Yaw
     private float previewPitch = 10.0f;           // Pitch
     private float previewRoll = 0.0f;             // Roll
@@ -49,6 +51,14 @@ public class EarsTailCustomizationScreen extends Screen {
     protected void init() {
         super.init();
         this.clearWidgets();
+
+        // Screen.init() is also called after resize and tab/preset/reset actions. Previously
+        // every call copied the attachment back over localData at the END of init(), making
+        // controls display stale values and occasionally undoing the click that triggered init.
+        if (!localDataLoaded && Minecraft.getInstance().player != null) {
+            localData.copyFrom(ModAttachments.get(Minecraft.getInstance().player));
+            localDataLoaded = true;
+        }
 
         int panelLeft = width / 2 - 25;
         int topPos = 42;
@@ -280,7 +290,9 @@ public class EarsTailCustomizationScreen extends Screen {
         }).bounds(18, height - 28, width / 2 - 58, 20).build());
 
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.reset_all"), b -> {
-            localData.applyFaradayPreset();
+            // A preset only changes part of the model. "Reset all" must restore every field,
+            // including body, pouch, custom texture and the realistic default physics mode.
+            localData.copyFrom(new PlayerEarsTailData());
             applyLiveUpdate();
             init();
         }).bounds(width / 2 - 165, height - 28, 155, 20).build());
@@ -289,12 +301,8 @@ public class EarsTailCustomizationScreen extends Screen {
             onClose();
         }).bounds(width / 2 + 10, height - 28, 155, 20).build());
 
-        if (Minecraft.getInstance().player != null) {
-            PlayerEarsTailData data = ModAttachments.get(Minecraft.getInstance().player);
-            localData.copyFrom(data);
-            if (canvasWidget != null && activeTab == 3) {
-                canvasWidget.importFromBase64(localData.getCustomTextureBase64());
-            }
+        if (canvasWidget != null && activeTab == 3) {
+            canvasWidget.importFromBase64(localData.getCustomTextureBase64());
         }
     }
 
