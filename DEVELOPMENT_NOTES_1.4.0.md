@@ -1,4 +1,4 @@
-# FaradayEars 1.4.0 — skeletal tail prototype
+# Kinetic Ears & Tails 1.4.0 — skeletal tail prototype
 
 Статус: выпущено как стабильный релиз v1.4.0. Дальнейшая настройка коэффициентов возможна по игровым видео.
 

@@ -1,4 +1,4 @@
-# Contributing to FaradayEarsMod
+# Contributing to KineticEarsTails
 
 Спасибо, что хотите помочь проекту! 🦊
 
@@ -6,12 +6,12 @@
 * Нужен **JDK 17** (Temurin/Adoptium) — https://adoptium.net
 * Windows: `.\gradlew.bat build`
 * Linux/macOS: `chmod +x gradlew && ./gradlew build`
-* Готовый jar: `build/libs/FaradayEarsMod-1.21.1-1.0.0.jar`
+* Готовый jar: `build/libs/KineticEarsTails-1.21.1-1.0.0.jar`
 
 ## Структура проекта
 ```
-src/main/java/com/yellowfire/faradayears/
-├── FaradayEarsMod.java            # точка входа, FML-события
+src/main/java/com/kinetic/earstails/
+├── KineticEarsTails.java            # точка входа, FML-события
 ├── capability/                    # PlayerEarsTailData — настройки игрока (NBT)
 ├── client/
 │   ├── ClientEvents.java          # клавиши, тики, сеть
@@ -28,7 +28,7 @@ src/main/java/com/yellowfire/faradayears/
 1. **GUI-слайдер хвоста `1..6` не менять** — внутренняя физическая сетка (`activePhysicalSegments`) может быть выше, пользовательский слайдер остаётся 1..6.
 2. **Гравитация хвоста постоянна:** `-0.070D` на земле / `-0.060D` в воздухе для всех сегментов. Никаких непрерывных вертикальных сил (`curveAngle`/`curveLift`) в `p.applyForce` — хвост не должен левитировать.
 3. **Первый сегмент хвоста выходит из поясницы строго горизонтально** (`computeBackDirection(player, 0.0D)`, `distance 0.11D`), дистальные сегменты плавно драпируются на рельеф.
-4. **FaradayBodyModel** — только косметика из скина игрока: `texOffs(20,20)` грудь, `texOffs(8,20)` бёдра, `texOffs(20,28)` мешочек.
+4. **KineticBodyModel** — только косметика из скина игрока: `texOffs(20,20)` грудь, `texOffs(8,20)` бёдра, `texOffs(20,28)` мешочек.
 5. Никакого взрослого/анатомического контента — только спортивные/косметические модификации.
 
 ## Pull Request

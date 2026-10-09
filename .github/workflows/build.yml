@@ -1,4 +1,4 @@
-name: Build FaradayEarsMod (NeoForge 1.21.1)
+name: Build KineticEarsTails (NeoForge 1.21.1)
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FaradayEarsMod-1.21.1
+          name: KineticEarsTails-1.21.1
           path: build/libs/*.jar
 
   release:

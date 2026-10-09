@@ -5,10 +5,10 @@ plugins {
 }
 
 version = mod_version
-group = 'com.yellowfire.faradayears'
+group = 'com.kinetic.earstails'
 
 base {
-    archivesName = 'FaradayEarsMod-1.21.1'
+    archivesName = 'KineticEarsTails-1.21.1'
 }
 
 // Minecraft 1.21.1 + NeoForge требуют Java 21
@@ -45,11 +45,11 @@ jar {
     manifest {
         attributes([
             'Specification-Title'     : 'faradayears',
-            'Specification-Vendor'    : 'Yellow Fire / Faraday Custom Mod',
+            'Specification-Vendor'    : 'Kinetic Ears & Tails contributors',
             'Specification-Version'   : '1',
             'Implementation-Title'    : project.name,
             'Implementation-Version'  : project.jar.archiveVersion,
-            'Implementation-Vendor'   : 'Yellow Fire Modding Team',
+            'Implementation-Vendor'   : 'Kinetic Ears & Tails contributors',
             'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }

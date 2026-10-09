@@ -1,4 +1,4 @@
-# Анализ кода FaradayEars 1.3.5
+# Анализ кода Kinetic Ears & Tails 1.3.5
 
 Дата анализа: 30.09.2026  
 Целевая платформа: Minecraft 1.21.1, NeoForge 21.1.x, Java 21  
@@ -8,12 +8,12 @@
 
 | Подсистема | Основные классы | Ответственность |
 |---|---|---|
-| Инициализация | `FaradayEarsMod`, `ModAttachments` | Регистрация attachment-данных, сети и игровых событий |
+| Инициализация | `KineticEarsTails`, `ModAttachments` | Регистрация attachment-данных, сети и игровых событий |
 | Данные | `PlayerEarsTailData` | Сохраняемые настройки ушей, хвоста, фигуры, текстуры и физического режима |
 | Сеть | `SyncEarsTailPacket`, `ModPacketHandler`, `ClientPacketHandler` | Двунаправленная синхронизация NBT |
 | Клиент | `ClientEvents` | Клавиша V, добавление render layer, клиентский физический тик |
 | GUI | `EarsTailCustomizationScreen`, `TextureCanvasWidget` | Кастомизация, предпросмотр и редактор текстуры |
-| Модели | `FaradayEarsModel`, `FaradayTailModel`, `FaradayBodyModel` | Геометрия ушей, старого хвоста и тела |
+| Модели | `KineticEarsTailsel`, `KineticTailModel`, `KineticBodyModel` | Геометрия ушей, старого хвоста и тела |
 | Рендер | `EarsAndTailLayer`, `ProceduralTailRenderer`, `CustomTailTextureManager` | Привязка к игроку, процедурная трубка, динамические текстуры |
 | Физика | `TailPhysicsEngine`, `PhysicsChain`, `PhysicsParticle`, `PhysicsWorldCollider` | Контекст позы, Verlet/PBD, ограничения и коллизии |
 
@@ -63,7 +63,7 @@
 
 #### 4.2. Неверная адресация при `PlayerEvent.StartTracking`
 
-`FaradayEarsMod.onStartTracking()` вызывает рассылку вокруг `observer`, хотя намерение — отправить новому наблюдателю данные `targetPlayer`.
+`KineticEarsTails.onStartTracking()` вызывает рассылку вокруг `observer`, хотя намерение — отправить новому наблюдателю данные `targetPlayer`.
 
 Нужно добавить `sendToPlayer(packet, observer)` и использовать его здесь. Это устранит лишнюю рассылку и сделает начальную синхронизацию однозначной.
 

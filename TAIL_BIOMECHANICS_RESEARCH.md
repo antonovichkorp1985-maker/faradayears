@@ -1,4 +1,4 @@
-# Биомеханика хвоста для FaradayEars
+# Биомеханика хвоста для Kinetic Ears & Tails
 
 Дата исследования: 2026-10-01. Цель — не нарисовать «правильную кривую», а вывести более правдоподобные ограничения суставов и мышечное управление режима 1.
 
@@ -155,6 +155,6 @@ Hard limit предотвращает травматический перело�
 6. Avril M, Bedu AS, Troupel T. *Clinical and magnetic resonance imaging findings of presumed limber tail syndrome in a cat*. Canadian Veterinary Journal, 2025;66(1):40–45. https://pmc.ncbi.nlm.nih.gov/articles/PMC11705180/
 7. Adal MN. *The sensory and motor innervation of muscle spindles in cat tail dorsolateral muscles*. Journal of Anatomy, 1984;138(Pt 2):237–249. https://pubmed.ncbi.nlm.nih.gov/6232250/
 
-## Итог для FaradayEars
+## Итог для Kinetic Ears & Tails
 
 Самое важное открытие для нашей задачи: «позвоночник» — это не просто цепочка с постепенно растущим максимальным углом. Проксимальные и дистальные суставы качественно различаются, а мышцы работают продольными многосуставными трактами. Поэтому следующий большой прирост реализма даст не дополнительная поза, а локальные анизотропные суставы + распределённые антагонистические мышцы + управление от реального возмущения таза.

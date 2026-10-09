@@ -28,7 +28,7 @@ git --version
 
 ## Шаг 2. Подготовить папку проекта
 
-1. Распакуйте архив `FaradayEarsMod-Final.zip` в папку, например: `C:\mods\faradayears`
+1. Распакуйте архив `KineticEarsTails-Final.zip` в папку, например: `C:\mods\faradayears`
 2. Внутри должны быть: `build.gradle`, `gradlew.bat`, `src`, `README.md`, `LICENSE`, `.github\` и т.д.
 3. Откройте **PowerShell** в этой папке (в Проводнике: адресная строка → введите `powershell` → Enter)
 
@@ -37,7 +37,7 @@ git --version
 ```powershell
 git init
 git add .
-git commit -m "FaradayEarsMod 1.0.0 (V56): ears, tail physics, body, pouch, GUI"
+git commit -m "KineticEarsTails 1.0.0 (V56): ears, tail physics, body, pouch, GUI"
 git branch -M main
 git remote add origin https://github.com/ВАШ_ЛОГИН/faradayears.git
 git push -u origin main
@@ -53,7 +53,7 @@ git push -u origin main
 ## Шаг 4. Проверить автоматическую сборку (GitHub Actions)
 
 1. На GitHub откройте репозиторий → вкладка **Actions**
-2. Должен крутиться workflow **«Build FaradayEarsMod»** (зелёная галочка = успех, красный крест = смотрите логи, пришлите мне текст ошибки)
+2. Должен крутиться workflow **«Build KineticEarsTails»** (зелёная галочка = успех, красный крест = смотрите логи, пришлите мне текст ошибки)
 3. Успешная сборка в CI означает, что **мод собирается на серверах GitHub без вашего участия** — проблема с TLS на вашем ПК больше не помеха!
 
 ## Шаг 5. Создать релиз (одна команда)
@@ -64,7 +64,7 @@ git push origin v1.0.0
 ```
 
 Workflow автоматически:
-- соберёт `FaradayEarsMod-1.21.1-1.0.0.jar`
+- соберёт `KineticEarsTails-1.21.1-1.0.0.jar`
 - создаст **GitHub Release** с прикреплённым jar-файлом → вкладка **Releases** на странице репозитория
 - этот релиз и есть «страница загрузки» мода — ссылку можно давать друзьям
 
@@ -74,12 +74,12 @@ Workflow автоматически:
 
 1. Регистрация: https://www.curseforge.com/register
 2. Войти → **My Projects** → **Create Project**
-3. **Project Name:** `Faraday Ears & Tail`
+3. **Project Name:** `Kinetic Ears & Tails`
 4. Вставьте описание из файла **`CURSEFORGE_DESCRIPTION.md`** (английский вариант — основной)
 5. **Game:** Minecraft → **Game version:** 1.21.1 → **Loader:** Forge
-6. Загрузите jar: `build/libs/FaradayEarsMod-1.21.1-1.0.0.jar` (или скачайте из GitHub Release)
+6. Загрузите jar: `build/libs/KineticEarsTails-1.21.1-1.0.0.jar` (или скачайте из GitHub Release)
 7. Загрузите **2–3 скриншота** (обязательно):
-   - пресет «Фарадей» крупным планом (ушки + хвост)
+   - пресет «Огненные кисточки» крупным планом (ушки + хвост)
    - хвост с хитбоксами (`F3+B`) на фоне
    - поясной мешочек + GUI с орбитальной камерой
 8. **Source code / Issues:** укажите ссылку на GitHub-репозиторий (CurseForge любит открытые исходники)
