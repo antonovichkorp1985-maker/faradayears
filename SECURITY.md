@@ -9,7 +9,7 @@
 Это клиентский косметический мод для Minecraft. Несмотря на это, если вы нашли проблему безопасности (например, краш-эксплойт через сетевые пакеты `SyncEarsTailPacket`), сообщите:
 
 1. Создайте issue в приватном режиме: GitHub → репозиторий → **Issues** → **New issue** → отметьте `This is a security report` (GitHub скроет его до рассмотрения).
-2. Или напишите в README-ссылку на автора (https://www.youtube.com/@YellowFire).
+2. Или напишите в README-ссылку на автора (https://github.com/antonovichkorp1985-maker/faradayears).
 
 Пожалуйста, **не публикуйте** детали уязвимости публично до исправления.
 

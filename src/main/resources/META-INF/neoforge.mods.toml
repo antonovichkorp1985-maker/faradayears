@@ -5,18 +5,18 @@ issueTrackerURL="https://github.com/antonovichkorp1985-maker/faradayears/issues"
 
 [[mods]]
 modId="faradayears"
-version="1.0.0"
-displayName="Faraday Ears & Tail Mod (Yellow Fire Style)"
-displayURL="https://www.youtube.com/@YellowFire"
-authors="Yellow Fire Modding Team & Arena AI"
+version="2.1.1"
+displayName="Kinetic Ears & Tails"
+displayURL="https://github.com/antonovichkorp1985-maker/faradayears"
+authors="Kinetic Ears & Tails contributors"
 description='''
-Мод для Minecraft 1.21.1 NeoForge, добавляющий настраиваемые ушки и пушистый хвостик в стиле Фарадея с канала Yellow Fire!
+Косметический мод для Minecraft 1.21.1 NeoForge с настраиваемыми 3D-ушами, физическими хвостами и редактором текстур.
 Особенности:
  - Интерактивное GUI кастомизации по нажатию клавиши (по умолчанию 'V')
- - Пресеты: Фарадей (Yellow Fire), Лис/Котик, Волк, Кролик, Кицунэ, Феликс
+ - Пресеты: Огненные кисточки, Лис/Котик, Волк, Кролик, Кицунэ, Кот с бантом
  - Точная настройка размеров, углов поворота и смещения ушек и хвоста
- - Физический хвост (Verlet + PBD) с коллизиями о землю и блоки
- - Фигура с независимой физикой полушарий и декоративный поясной мешочек
+ - Физический хвост (Verlet + PBD) с коллизиями о землю и блоки; 2 режима: Классика / Реалистичная скелетно-мышечная
+ - Кастомная текстура 64x64 (единый лист ушек и хвоста) с пиксельным редактором в GUI и подсказкой зон
  - Синхронизация между игроками по сети (мультиплеер!)
 '''
 

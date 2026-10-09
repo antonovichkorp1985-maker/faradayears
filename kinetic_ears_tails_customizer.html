@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Ears & Tails Customizer — Independent Cosmetic Mod (Minecraft 1.19.2 Forge)</title>
+    <style>
+        :root {
+            --bg-main: #141210;
+            --bg-panel: #1E1A17;
+            --bg-card: #28231E;
+            --accent-orange: #EE8C1E;
+            --accent-red: #C44D14;
+            --accent-yellow: #F5C037;
+            --text-main: #F4ECE1;
+            --text-dim: #A89F91;
+            --border: #3A322A;
+            --mc-gui-bg: #C6C6C6;
+            --mc-gui-border: #555555;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1E1814, #2A1F18);
+            border-bottom: 2px solid var(--accent-orange);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-yellow);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .badge {
+            background: var(--accent-orange);
+            color: #000;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge-forge {
+            background: #4A90E2;
+            color: #fff;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        /* 3D Preview Panel */
+        .preview-panel {
+            flex: 1;
+            background: radial-gradient(circle at center, #2C2621 0%, #171412 100%);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+        }
+
+        .preview-header {
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .preview-header span {
+            font-weight: 600;
+            color: var(--accent-orange);
+            font-size: 14px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #viewport3d {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #viewport3d:active {
+            cursor: grabbing;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .hint-text {
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        /* Customizer Controls Panel */
+        .controls-panel {
+            width: 480px;
+            background: var(--bg-panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .tabs-header {
+            display: flex;
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-orange);
+            border-bottom-color: var(--accent-orange);
+            background: rgba(238, 140, 30, 0.08);
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .preset-card:hover {
+            border-color: var(--accent-orange);
+            transform: translateY(-2px);
+        }
+
+        .preset-card.active {
+            border-color: var(--accent-yellow);
+            background: rgba(245, 192, 55, 0.1);
+            box-shadow: 0 0 10px rgba(245, 192, 55, 0.2);
+        }
+
+        .preset-card h4 {
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .preset-card p {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .control-group {
+            margin-bottom: 14px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .slider-val {
+            color: var(--accent-orange);
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #3A322A;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .checkbox-row:hover {
+            border-color: var(--accent-orange);
+        }
+
+        /* Pixel Editor */
+        .pixel-editor-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #pixelCanvas {
+            border: 2px solid #000;
+            background: #111;
+            image-rendering: pixelated;
+            cursor: crosshair;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            border-radius: 4px;
+        }
+
+        .palette-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.active {
+            border-color: #fff;
+            transform: scale(1.2);
+            box-shadow: 0 0 8px #fff;
+        }
+
+        .tools-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .tool-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tool-btn.active {
+            background: var(--accent-orange);
+            color: #000;
+            border-color: var(--accent-orange);
+        }
+
+        .footer-actions {
+            padding: 16px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(238, 140, 30, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(238, 140, 30, 0.6);
+        }
+
+        .btn-secondary {
+            background: #3A322A;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: #4A4035;
+        }
+
+        .color-picker-input {
+            width: 32px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">
+        <h1>🦊 Kinetic Ears & Tails Customizer</h1>
+        <span class="badge">Independent Cosmetic Mod</span>
+        <span class="badge badge-forge">Forge 1.19.2 (Fixed Pivot Rotations)</span>
+    </div>
+    <div style="font-size: 13px; color: var(--text-dim);">
+        Клавиша в игре: <strong style="color: var(--accent-yellow); background: #333; padding: 2px 6px; border-radius: 4px;">V</strong> или <strong style="color: var(--accent-yellow); background: #333; padding: 2px 6px; border-radius: 4px;">G</strong>
+    </div>
+</header>
+
+<div class="main-container">
+    <!-- 3D Player & Ears Preview -->
+    <div class="preview-panel">
+        <div class="preview-header">
+            <span>🔴 3D Предпросмотр (Иерархические Pivot-шарниры)</span>
+            <span style="font-size: 12px; color: #888;">Зажми и крути мышью</span>
+        </div>
+        <div class="canvas-container">
+            <canvas id="viewport3d"></canvas>
+        </div>
+        <div class="controls-overlay">
+            <div class="hint-text">💡 Крути левой кнопкой • Колёсиком приближай</div>
+            <div class="hint-text" id="animationStatus">Анимация: Ходьба (Хвост качается)</div>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab(0)">★ Пресеты</button>
+            <button class="tab-btn" onclick="switchTab(1)">🐱 Ушки</button>
+            <button class="tab-btn" onclick="switchTab(2)">🦊 Хвостик</button>
+            <button class="tab-btn" onclick="switchTab(3)">🎨 Рисование</button>
+        </div>
+
+        <!-- TAB 0: PRESETS -->
+        <div class="tab-content active" id="tab-0">
+            <div class="section-title">
+                <span>Пресеты дизайна</span>
+            </div>
+            <div class="preset-grid">
+                <div class="preset-card active" id="preset-ember" onclick="selectPreset('ember')">
+                    <h4>★ Огненные кисточки</h4>
+                    <p>Тёмно-коричневые ушки с оранжевыми кисточками и пушистый хвост</p>
+                </div>
+                <div class="preset-card" id="preset-fox" onclick="selectPreset('fox')">
+                    <h4>🦊 Лисёнок / Котик</h4>
+                    <p>Остроконечные ушки и рыжий пушистый хвостик с белым кончиком</p>
+                </div>
+                <div class="preset-card" id="preset-wolf" onclick="selectPreset('wolf')">
+                    <h4>🐺 Серый Волк</h4>
+                    <p>Прямые тёмно-серые волчьи уши и густой прямой хвост</p>
+                </div>
+                <div class="preset-card" id="preset-bunny" onclick="selectPreset('bunny')">
+                    <h4>🐰 Кролик</h4>
+                    <p>Длинные опущенные ушки и аккуратный круглый хвостик-пушок</p>
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 10px;">
+                <span>Отображение</span>
+            </div>
+            <div class="checkbox-row" onclick="toggleEars()">
+                <span style="font-weight: 600;">Отображать ушки на голове</span>
+                <input type="checkbox" id="toggleEarsBtn" checked style="width: 18px; height: 18px;">
+            </div>
+            <div class="checkbox-row" onclick="toggleTail()">
+                <span style="font-weight: 600;">Отображать хвостик на спине</span>
+                <input type="checkbox" id="toggleTailBtn" checked style="width: 18px; height: 18px;">
+            </div>
+            <div class="checkbox-row" onclick="toggleAnim()">
+                <span style="font-weight: 600;">Анимация ходьбы и покачивания</span>
+                <input type="checkbox" id="toggleAnimBtn" checked style="width: 18px; height: 18px;">
+            </div>
+        </div>
+
+        <!-- TAB 1: EARS CUSTOMIZATION -->
+        <div class="tab-content" id="tab-1">
+            <div class="section-title"><span>Размеры и масштаб ушек</span></div>
+            <div class="control-group">
+                <div class="control-label"><span>Ширина (Scale X)</span><span class="slider-val" id="val_earScaleX">1.00</span></div>
+                <input type="range" id="earScaleX" min="0.5" max="2.5" step="0.05" value="1.0" oninput="updateParam('earScaleX', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Высота (Scale Y)</span><span class="slider-val" id="val_earScaleY">1.00</span></div>
+                <input type="range" id="earScaleY" min="0.5" max="2.5" step="0.05" value="1.0" oninput="updateParam('earScaleY', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Глубина (Scale Z)</span><span class="slider-val" id="val_earScaleZ">1.00</span></div>
+                <input type="range" id="earScaleZ" min="0.5" max="2.5" step="0.05" value="1.0" oninput="updateParam('earScaleZ', this.value)">
+            </div>
+
+            <div class="section-title" style="margin-top: 20px;"><span>Углы наклона и развала (Pivot на макушке)</span></div>
+            <div class="control-group">
+                <div class="control-label"><span>Наклон вперед/назад (Rot X)</span><span class="slider-val" id="val_earRotX">0°</span></div>
+                <input type="range" id="earRotX" min="-60" max="60" step="1" value="0" oninput="updateParam('earRotX', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Поворот вокруг оси (Rot Y)</span><span class="slider-val" id="val_earRotY">0°</span></div>
+                <input type="range" id="earRotY" min="-60" max="60" step="1" value="0" oninput="updateParam('earRotY', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Развал в стороны (Rot Z)</span><span class="slider-val" id="val_earRotZ">0°</span></div>
+                <input type="range" id="earRotZ" min="-60" max="60" step="1" value="0" oninput="updateParam('earRotZ', this.value)">
+            </div>
+        </div>
+
+        <!-- TAB 2: TAIL CUSTOMIZATION -->
+        <div class="tab-content" id="tab-2">
+            <div class="section-title"><span>Размеры и пушистость хвостика</span></div>
+            <div class="control-group">
+                <div class="control-label"><span>Ширина (Scale X)</span><span class="slider-val" id="val_tailScaleX">1.10</span></div>
+                <input type="range" id="tailScaleX" min="0.5" max="2.5" step="0.05" value="1.1" oninput="updateParam('tailScaleX', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Длина хвостика (Scale Y)</span><span class="slider-val" id="val_tailScaleY">1.10</span></div>
+                <input type="range" id="tailScaleY" min="0.5" max="2.5" step="0.05" value="1.1" oninput="updateParam('tailScaleY', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Объём (Scale Z)</span><span class="slider-val" id="val_tailScaleZ">1.20</span></div>
+                <input type="range" id="tailScaleZ" min="0.5" max="2.5" step="0.05" value="1.2" oninput="updateParam('tailScaleZ', this.value)">
+            </div>
+
+            <div class="section-title" style="margin-top: 20px;"><span>Угол посадки от сустава поясницы (Rotations)</span></div>
+            <div class="control-group">
+                <div class="control-label"><span>Подъём хвоста вверх/вниз (Rot X)</span><span class="slider-val" id="val_tailRotX">-15°</span></div>
+                <input type="range" id="tailRotX" min="-75" max="75" step="1" value="-15" oninput="updateParam('tailRotX', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Смещение вбок (Rot Y)</span><span class="slider-val" id="val_tailRotY">0°</span></div>
+                <input type="range" id="tailRotY" min="-75" max="75" step="1" value="0" oninput="updateParam('tailRotY', this.value)">
+            </div>
+            <div class="control-group">
+                <div class="control-label"><span>Наклон по оси (Rot Z)</span><span class="slider-val" id="val_tailRotZ">0°</span></div>
+                <input type="range" id="tailRotZ" min="-75" max="75" step="1" value="0" oninput="updateParam('tailRotZ', this.value)">
+            </div>
+        </div>
+
+        <!-- TAB 3: PIXEL ART EDITOR -->
+        <div class="tab-content" id="tab-3">
+            <div class="section-title"><span>Рисование собственной текстуры (16x16)</span></div>
+            <div class="pixel-editor-wrapper">
+                <div class="tools-row">
+                    <button class="tool-btn active" id="tool-pencil" onclick="setTool('pencil')">✏️ Карандаш</button>
+                    <button class="tool-btn" id="tool-fill" onclick="setTool('fill')">🪣 Заливка</button>
+                    <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧹 Ластик</button>
+                </div>
+
+                <canvas id="pixelCanvas" width="224" height="224"></canvas>
+
+                <div class="palette-grid">
+                    <div class="color-swatch active" style="background: #262220;" onclick="setColor('#262220', this)" title="Тёмная шерсть Фарадея"></div>
+                    <div class="color-swatch" style="background: #EE8C1E;" onclick="setColor('#EE8C1E', this)" title="Оранжевые кисточки"></div>
+                    <div class="color-swatch" style="background: #C44D14;" onclick="setColor('#C44D14', this)" title="Красноватый кончик"></div>
+                    <div class="color-swatch" style="background: #F5C037;" onclick="setColor('#F5C037', this)" title="Жёлтый акцент"></div>
+                    <div class="color-swatch" style="background: #FFFFFF;" onclick="setColor('#FFFFFF', this)" title="Белый"></div>
+                    <div class="color-swatch" style="background: #555555;" onclick="setColor('#555555', this)" title="Серый"></div>
+                    <div class="color-swatch" style="background: #111111;" onclick="setColor('#111111', this)" title="Чёрный"></div>
+                    <input type="color" class="color-picker-input" id="customColorPicker" value="#EE8C1E" onchange="setColor(this.value, null)" title="Свой цвет">
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <button class="btn btn-secondary" onclick="exportJSON()">📥 Сохранить конфиг (.json)</button>
+            <button class="btn btn-primary" onclick="downloadTexture()">🖼️ Скачать текстуру (.png)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* =========================================================================
+       1. PIXEL EDITOR & TEXTURE MAP MANAGEMENT
+       ========================================================================= */
+    const gridSize = 16;
+    const pixelGrid = [];
+    let activeTool = 'pencil';
+    let activeColor = '#262220';
+
+    for (let i = 0; i < gridSize; i++) {
+        pixelGrid[i] = [];
+        for (let j = 0; j < gridSize; j++) {
+            if (i < 8 && j < 8) {
+                pixelGrid[i][j] = '#262220'; // Outer ear base / dark fur
+            } else if (i >= 8 && j < 8) {
+                pixelGrid[i][j] = '#EE8C1E'; // Inner ear / brush tufts
+            } else if (j >= 8 && j < 12) {
+                pixelGrid[i][j] = '#262220'; // Tail base/mid
+            } else {
+                pixelGrid[i][j] = '#C44D14'; // Tail tip
+            }
+        }
+    }
+
+    const pCanvas = document.getElementById('pixelCanvas');
+    const pCtx = pCanvas.getContext('2d');
+    let isDrawing = false;
+
+    function renderPixelGrid() {
+        const cellSize = pCanvas.width / gridSize;
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                pCtx.fillStyle = pixelGrid[i][j];
+                pCtx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+            }
+        }
+        pCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+        pCtx.lineWidth = 1;
+        for (let i = 0; i <= gridSize; i++) {
+            pCtx.beginPath();
+            pCtx.moveTo(i * cellSize, 0);
+            pCtx.lineTo(i * cellSize, pCanvas.height);
+            pCtx.stroke();
+            pCtx.beginPath();
+            pCtx.moveTo(0, i * cellSize);
+            pCtx.lineTo(pCanvas.width, i * cellSize);
+            pCtx.stroke();
+        }
+    }
+
+    function applyTool(e) {
+        const rect = pCanvas.getBoundingClientRect();
+        const cellSize = pCanvas.width / gridSize;
+        const x = Math.floor((e.clientX - rect.left) / cellSize);
+        const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            if (activeTool === 'pencil') {
+                pixelGrid[x][y] = activeColor;
+            } else if (activeTool === 'eraser') {
+                pixelGrid[x][y] = '#262220';
+            } else if (activeTool === 'fill') {
+                bucketFill(x, y, pixelGrid[x][y], activeColor);
+            }
+            renderPixelGrid();
+        }
+    }
+
+    function bucketFill(x, y, targetColor, replacementColor) {
+        if (targetColor === replacementColor) return;
+        if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+        if (pixelGrid[x][y] !== targetColor) return;
+
+        pixelGrid[x][y] = replacementColor;
+        bucketFill(x + 1, y, targetColor, replacementColor);
+        bucketFill(x - 1, y, targetColor, replacementColor);
+        bucketFill(x, y + 1, targetColor, replacementColor);
+        bucketFill(x, y - 1, targetColor, replacementColor);
+    }
+
+    pCanvas.addEventListener('mousedown', (e) => { isDrawing = true; applyTool(e); });
+    pCanvas.addEventListener('mousemove', (e) => { if (isDrawing && activeTool !== 'fill') applyTool(e); });
+    window.addEventListener('mouseup', () => { isDrawing = false; });
+
+    function setTool(tool) {
+        activeTool = tool;
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tool-' + tool).classList.add('active');
+    }
+
+    function setColor(color, element) {
+        activeColor = color;
+        if (element) {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            element.classList.add('active');
+        }
+    }
+
+    renderPixelGrid();
+
+    /* =========================================================================
+       2. UI CONTROLS & PARAMS
+       ========================================================================= */
+    const params = {
+        showEars: true,
+        showTail: true,
+        animate: true,
+        earScaleX: 1.0, earScaleY: 1.0, earScaleZ: 1.0,
+        earRotX: 0, earRotY: 0, earRotZ: 0,
+        tailScaleX: 1.1, tailScaleY: 1.1, tailScaleZ: 1.2,
+        tailRotX: -15, tailRotY: 0, tailRotZ: 0
+    };
+
+    function switchTab(idx) {
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === idx));
+    }
+
+    function updateParam(key, value) {
+        const numVal = parseFloat(value);
+        params[key] = numVal;
+        const displayEl = document.getElementById('val_' + key);
+        if (displayEl) {
+            displayEl.innerText = key.includes('Rot') ? Math.round(numVal) + '°' : numVal.toFixed(2);
+        }
+    }
+
+    function toggleEars() {
+        const cb = document.getElementById('toggleEarsBtn');
+        params.showEars = cb.checked;
+    }
+
+    function toggleTail() {
+        const cb = document.getElementById('toggleTailBtn');
+        params.showTail = cb.checked;
+    }
+
+    function toggleAnim() {
+        const cb = document.getElementById('toggleAnimBtn');
+        params.animate = cb.checked;
+        document.getElementById('animationStatus').innerText = params.animate ? "Анимация: Ходьба (Хвост качается)" : "Анимация: Статика (Стоячая стойка)";
+    }
+
+    function selectPreset(type) {
+        document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('preset-' + type).classList.add('active');
+
+        if (type === 'ember') {
+            setSliderValues(1.0, 1.0, 1.0, 0, 0, 0, 1.1, 1.1, 1.2, -15, 0, 0);
+            applyPalette('#262220', '#EE8C1E', '#C44D14');
+        } else if (type === 'fox') {
+            setSliderValues(1.1, 1.2, 0.9, 10, -5, 10, 1.3, 1.4, 1.3, -25, 0, 0);
+            applyPalette('#D35400', '#F39C12', '#FFFFFF');
+        } else if (type === 'wolf') {
+            setSliderValues(0.9, 1.1, 1.0, 0, 0, 0, 1.0, 1.2, 1.1, -5, 0, 0);
+            applyPalette('#555555', '#777777', '#333333');
+        } else if (type === 'bunny') {
+            setSliderValues(0.8, 2.0, 0.6, 30, 0, -20, 0.7, 0.7, 0.7, 10, 0, 0);
+            applyPalette('#EEEEEE', '#FFB6C1', '#FFFFFF');
+        }
+        renderPixelGrid();
+    }
+
+    function setSliderValues(esX, esY, esZ, erX, erY, erZ, tsX, tsY, tsZ, trX, trY, trZ) {
+        document.getElementById('earScaleX').value = esX; updateParam('earScaleX', esX);
+        document.getElementById('earScaleY').value = esY; updateParam('earScaleY', esY);
+        document.getElementById('earScaleZ').value = esZ; updateParam('earScaleZ', esZ);
+        document.getElementById('earRotX').value = erX; updateParam('earRotX', erX);
+        document.getElementById('earRotY').value = erY; updateParam('earRotY', erY);
+        document.getElementById('earRotZ').value = erZ; updateParam('earRotZ', erZ);
+
+        document.getElementById('tailScaleX').value = tsX; updateParam('tailScaleX', tsX);
+        document.getElementById('tailScaleY').value = tsY; updateParam('tailScaleY', tsY);
+        document.getElementById('tailScaleZ').value = tsZ; updateParam('tailScaleZ', tsZ);
+        document.getElementById('tailRotX').value = trX; updateParam('tailRotX', trX);
+        document.getElementById('tailRotY').value = trY; updateParam('tailRotY', trY);
+        document.getElementById('tailRotZ').value = trZ; updateParam('tailRotZ', trZ);
+    }
+
+    function applyPalette(baseColor, accentColor, tipColor) {
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                if (i < 8 && j < 8) pixelGrid[i][j] = baseColor;
+                else if (i >= 8 && j < 8) pixelGrid[i][j] = accentColor;
+                else if (j >= 8 && j < 12) pixelGrid[i][j] = baseColor;
+                else pixelGrid[i][j] = tipColor;
+            }
+        }
+    }
+
+    /* =========================================================================
+       3. HIERARCHICAL MATRIX POSE-STACK 3D ENGINE
+       ========================================================================= */
+    class TransformStack {
+        constructor() {
+            this.stack = [];
+            this.current = [
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ];
+        }
+        push() {
+            this.stack.push([...this.current]);
+        }
+        pop() {
+            if (this.stack.length > 0) {
+                this.current = this.stack.pop();
+            }
+        }
+        translate(x, y, z) {
+            let m = this.current;
+            m[3]  += m[0]*x + m[1]*y + m[2]*z;
+            m[7]  += m[4]*x + m[5]*y + m[6]*z;
+            m[11] += m[8]*x + m[9]*y + m[10]*z;
+        }
+        rotateX(rad) {
+            let c = Math.cos(rad), s = Math.sin(rad);
+            let m = this.current;
+            let m1 = m[1]*c + m[2]*s, m2 = -m[1]*s + m[2]*c;
+            let m5 = m[5]*c + m[6]*s, m6 = -m[5]*s + m[6]*c;
+            let m9 = m[9]*c + m[10]*s, m10 = -m[9]*s + m[10]*c;
+            m[1] = m1; m[2] = m2; m[5] = m5; m[6] = m6; m[9] = m9; m[10] = m10;
+        }
+        rotateY(rad) {
+            let c = Math.cos(rad), s = Math.sin(rad);
+            let m = this.current;
+            let m0 = m[0]*c - m[2]*s, m2 = m[0]*s + m[2]*c;
+            let m4 = m[4]*c - m[6]*s, m6 = m[4]*s + m[6]*c;
+            let m8 = m[8]*c - m[10]*s, m10 = m[8]*s + m[10]*c;
+            m[0] = m0; m[2] = m2; m[4] = m4; m[6] = m6; m[8] = m8; m[10] = m10;
+        }
+        rotateZ(rad) {
+            let c = Math.cos(rad), s = Math.sin(rad);
+            let m = this.current;
+            let m0 = m[0]*c + m[1]*s, m1 = -m[0]*s + m[1]*c;
+            let m4 = m[4]*c + m[5]*s, m5 = -m[4]*s + m[5]*c;
+            let m8 = m[8]*c + m[9]*s, m9 = -m[8]*s + m[9]*c;
+            m[0] = m0; m[1] = m1; m[4] = m4; m[5] = m5; m[8] = m8; m[9] = m9;
+        }
+        scale(sx, sy, sz) {
+            let m = this.current;
+            m[0] *= sx; m[1] *= sy; m[2] *= sz;
+            m[4] *= sx; m[5] *= sy; m[6] *= sz;
+            m[8] *= sx; m[9] *= sy; m[10] *= sz;
+        }
+        transformPoint(v) {
+            let m = this.current;
+            return [
+                m[0]*v[0] + m[1]*v[1] + m[2]*v[2] + m[3],
+                m[4]*v[0] + m[5]*v[1] + m[6]*v[2] + m[7],
+                m[8]*v[0] + m[1]*v[1] + m[10]*v[2] + m[11]
+            ];
+        }
+    }
+
+    const canvas = document.getElementById('viewport3d');
+    const ctx = canvas.getContext('2d');
+    let camRotX = 0.2;
+    let camRotY = -0.5;
+    let camDist = 220;
+    let drag = false, lastMX = 0, lastMY = 0;
+
+    canvas.addEventListener('mousedown', (e) => { drag = true; lastMX = e.clientX; lastMY = e.clientY; });
+    window.addEventListener('mousemove', (e) => {
+        if (drag) {
+            camRotY += (e.clientX - lastMX) * 0.01;
+            camRotX += (e.clientY - lastMY) * 0.01;
+            lastMX = e.clientX; lastMY = e.clientY;
+        }
+    });
+    window.addEventListener('mouseup', () => { drag = false; });
+    canvas.addEventListener('wheel', (e) => {
+        camDist = Math.max(120, Math.min(360, camDist + e.deltaY * 0.2));
+    });
+
+    function drawBoxFaces(stack, minX, minY, minZ, width, height, depth, colorTop, colorFront, colorSide, facesArray) {
+        const rawVerts = [
+            [minX, minY, minZ],             [minX+width, minY, minZ],
+            [minX+width, minY+height, minZ], [minX, minY+height, minZ],
+            [minX, minY, minZ+depth],       [minX+width, minY, minZ+depth],
+            [minX+width, minY+height, minZ+depth], [minX, minY+height, minZ+depth]
+        ];
+        const verts = rawVerts.map(v => stack.transformPoint(v));
+
+        facesArray.push(
+            { v: [verts[0], verts[1], verts[2], verts[3]], color: colorFront }, // Front (-z)
+            { v: [verts[5], verts[4], verts[7], verts[6]], color: colorFront }, // Back (+z)
+            { v: [verts[4], verts[5], verts[1], verts[0]], color: colorTop },   // Top (-y)
+            { v: [verts[3], verts[2], verts[6], verts[7]], color: colorTop },   // Bottom (+y)
+            { v: [verts[4], verts[0], verts[3], verts[7]], color: colorSide },  // Left (-x)
+            { v: [verts[1], verts[5], verts[6], verts[2]], color: colorSide }   // Right (+x)
+        );
+    }
+
+    let startTime = performance.now();
+
+    function render3D() {
+        if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const time = (performance.now() - startTime) * 0.003;
+        const limbAngle = params.animate ? Math.sin(time * 2) * 0.5 : 0;
+        const tailSwishX = params.animate ? Math.cos(time * 2.5) * 0.2 : 0;
+        const tailSwishY = params.animate ? Math.sin(time * 1.5) * 0.25 : 0;
+        const headYaw = params.animate ? Math.sin(time) * 0.15 : 0;
+
+        const stack = new TransformStack();
+        const allFaces = [];
+
+        // Apply camera rotation
+        stack.rotateX(camRotX);
+        stack.rotateY(camRotY);
+
+        // ================== 1. PLAYER BODY (player skin) ==================
+        // Torso / Vest (-8 to +8 in X, -4 to +20 in Y, -4 to +4 in Z)
+        drawBoxFaces(stack, -8, -4, -4, 16, 24, 8, '#1A1817', '#22201E', '#1A1817', allFaces);
+
+        // Arms & Legs
+        stack.push();
+        stack.translate(-12, -4, 0); stack.rotateX(limbAngle);
+        drawBoxFaces(stack, -4, 0, -4, 8, 24, 8, '#262220', '#DEB887', '#C8A271', allFaces);
+        stack.pop();
+
+        stack.push();
+        stack.translate(12, -4, 0); stack.rotateX(-limbAngle);
+        drawBoxFaces(stack, -4, 0, -4, 8, 24, 8, '#262220', '#DEB887', '#C8A271', allFaces);
+        stack.pop();
+
+        stack.push();
+        stack.translate(-4, 20, 0); stack.rotateX(-limbAngle);
+        drawBoxFaces(stack, -4, 0, -4, 8, 24, 8, '#A93226', '#C0392B', '#962D22', allFaces);
+        stack.pop();
+
+        stack.push();
+        stack.translate(4, 20, 0); stack.rotateX(limbAngle);
+        drawBoxFaces(stack, -4, 0, -4, 8, 24, 8, '#A93226', '#C0392B', '#962D22', allFaces);
+        stack.pop();
+
+        // ================== 2. HEAD & EARS ==================
+        stack.push();
+        stack.translate(0, -4, 0); // Head pivot right at top of neck (Y = -4)
+        stack.rotateY(headYaw);
+        
+        // Head Box (-8 to +8 in X, -16 to 0 in Y relative to neck, -8 to +8 in Z)
+        drawBoxFaces(stack, -8, -16, -8, 16, 16, 16, '#262220', '#DEB887', '#C8A271', allFaces);
+        
+        // Eyes detail on front of head (Z = -8.1)
+        drawBoxFaces(stack, -5, -9, -8.2, 3, 2, 0.2, '#F5C037', '#F5C037', '#F5C037', allFaces);
+        drawBoxFaces(stack, 2, -9, -8.2, 3, 2, 0.2, '#F5C037', '#F5C037', '#F5C037', allFaces);
+
+        if (params.showEars) {
+            const earColorBase = pixelGrid[3][3] || '#262220';
+            const earColorInner = pixelGrid[10][3] || '#EE8C1E';
+            const radX = params.earRotX * Math.PI / 180;
+            const radY = params.earRotY * Math.PI / 180;
+            const radZ = params.earRotZ * Math.PI / 180;
+
+            // --- LEFT EAR (Pivot at base on top-left of head: X=-4.5, Y=-16, Z=0) ---
+            stack.push();
+            stack.translate(-4.5, -16, 0);
+            // Rotate around exact ear root!
+            stack.rotateX(0.1 + radX);
+            stack.rotateY(-0.1 + radY);
+            // For left ear, +RotZ tilts outward to the left (+radZ turns left counter-clockwise around Z)
+            stack.rotateZ(-0.25 - radZ);
+            stack.scale(params.earScaleX, params.earScaleY, params.earScaleZ);
+
+            // Ear base box extends upwards from Y=0 to Y=-8 (so 0 is bottom base!)
+            drawBoxFaces(stack, -2.5, -8, -1.5, 5, 8, 3, earColorBase, earColorInner, earColorBase, allFaces);
+
+            // Left Ear Tuft Horn (attached to top of left ear: Y=-8)
+            stack.push();
+            stack.translate(0, -8, 0);
+            drawBoxFaces(stack, -1.5, -5, -1, 3, 5, 2, earColorInner, earColorInner, earColorBase, allFaces);
+            stack.pop();
+
+            stack.pop(); // Pop left ear
+
+            // --- RIGHT EAR (Pivot at base on top-right of head: X=+4.5, Y=-16, Z=0) ---
+            stack.push();
+            stack.translate(4.5, -16, 0);
+            stack.rotateX(0.1 + radX);
+            stack.rotateY(0.1 - radY);
+            // For right ear, +RotZ tilts outward to the right symmetrically (+radZ turns clockwise around Z)
+            stack.rotateZ(0.25 + radZ);
+            stack.scale(params.earScaleX, params.earScaleY, params.earScaleZ);
+
+            drawBoxFaces(stack, -2.5, -8, -1.5, 5, 8, 3, earColorBase, earColorInner, earColorBase, allFaces);
+
+            // Right Ear Tuft Horn
+            stack.push();
+            stack.translate(0, -8, 0);
+            drawBoxFaces(stack, -1.5, -5, -1, 3, 5, 2, earColorInner, earColorInner, earColorBase, allFaces);
+            stack.pop();
+
+            stack.pop(); // Pop right ear
+        }
+        stack.pop(); // Pop head
+
+        // ================== 3. TAIL (Hierarchical Joint Segments) ==================
+        if (params.showTail) {
+            const tailColorBase = pixelGrid[5][12] || '#262220';
+            const tailColorTip = pixelGrid[5][15] || '#C44D14';
+            const trX = (params.tailRotX * Math.PI / 180);
+            const trY = (params.tailRotY * Math.PI / 180);
+            const trZ = (params.tailRotZ * Math.PI / 180);
+
+            // Root joint attached to lower spine (X=0, Y=14, Z=4)
+            stack.push();
+            stack.translate(0, 14, 4);
+            // Pivot around spine root
+            stack.rotateX(-0.3 + trX + tailSwishX);
+            stack.rotateY(trY + tailSwishY);
+            stack.rotateZ(trZ);
+            stack.scale(params.tailScaleX, params.tailScaleY, params.tailScaleZ);
+
+            // Tail Root segment extends along +Z (from Z=0 to Z=6)
+            drawBoxFaces(stack, -3.5, -3.5, 0, 7, 7, 6, tailColorBase, tailColorBase, tailColorBase, allFaces);
+
+            // Tail Mid joint (pivots right at end of Root: Z=6)
+            stack.push();
+            stack.translate(0, 0, 6);
+            stack.rotateX(0.35); // slight natural curve upwards
+            drawBoxFaces(stack, -4.5, -4.5, 0, 9, 9, 7, tailColorBase, tailColorBase, tailColorBase, allFaces);
+
+            // Tail Tip joint (pivots right at end of Mid: Z=7)
+            stack.push();
+            stack.translate(0, 0, 7);
+            stack.rotateX(0.2);
+            drawBoxFaces(stack, -4, -4, 0, 8, 8, 6, tailColorTip, tailColorTip, tailColorTip, allFaces);
+            stack.pop(); // Pop Tip
+
+            stack.pop(); // Pop Mid
+            stack.pop(); // Pop Tail Root
+        }
+
+        // Project and sort faces by depth (painter's algorithm)
+        const projectedFaces = [];
+        allFaces.forEach(face => {
+            const projVerts = face.v.map(v => {
+                const z = v[2] + camDist;
+                const fov = 450 / z;
+                return {
+                    x: v[0] * fov + canvas.width / 2,
+                    y: v[1] * fov + canvas.height / 2,
+                    z: z, rx: v[0], ry: v[1], rz: v[2]
+                };
+            });
+
+            const avgZ = projVerts.reduce((sum, pv) => sum + pv.z, 0) / projVerts.length;
+            const v0 = projVerts[0], v1 = projVerts[1], v2 = projVerts[2];
+            const nz = (v1.rx - v0.rx) * (v2.ry - v0.ry) - (v1.ry - v0.ry) * (v2.rx - v0.rx);
+
+            if (nz > 0) {
+                projectedFaces.push({ verts: projVerts, depth: avgZ, color: face.color });
+            }
+        });
+
+        projectedFaces.sort((a, b) => b.depth - a.depth);
+
+        projectedFaces.forEach(face => {
+            ctx.fillStyle = face.color;
+            ctx.strokeStyle = '#111111';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(face.verts[0].x, face.verts[0].y);
+            for (let i = 1; i < face.verts.length; i++) {
+                ctx.lineTo(face.verts[i].x, face.verts[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        requestAnimationFrame(render3D);
+    }
+
+    render3D();
+
+    /* =========================================================================
+       4. EXPORT & DOWNLOAD HELPERS
+       ========================================================================= */
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(params, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "kinetic_ears_tails_config.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function downloadTexture() {
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 32;
+        exportCanvas.height = 32;
+        const eCtx = exportCanvas.getContext('2d');
+
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                eCtx.fillStyle = pixelGrid[i][j];
+                eCtx.fillRect(i * 2, j * 2, 2, 2);
+            }
+        }
+
+        const link = document.createElement('a');
+        link.download = 'kinetic_ears_tails.png';
+        link.href = exportCanvas.toDataURL();
+        link.click();
+    }
+</script>
+</body>
+</html>
