@@ -1,8 +1,6 @@
-# KineticEarsTails — Customizable Ears, Procedural Tail, Body Physics & Belt Pouch (1.21.1 NeoForge)
 
 [🇷🇺 Русская версия](README.md) · [📜 Changelog](CHANGELOG.md) · [🚀 Publishing guide](GITHUB_SETUP.md)
 
-A client/server Minecraft **1.21.1 NeoForge** mod that adds fully customizable 3D ears, a physics-driven procedural tail, body/figure modifications with independent jiggle physics, a 3D GUI preview and a decorative front belt pouch — all in the style of the **Kinetic Ears & Tails** YouTube channel character.
 
 > **License:** MIT — open source, free to use, modify and distribute.
 
@@ -27,16 +25,9 @@ A client/server Minecraft **1.21.1 NeoForge** mod that adds fully customizable 3
 ### 👗 Body & physics
 * 4 figure modes: **0 Neutral, 1 ♀ Female, 2 ♂ Athletic male, 3 ⚧ Combined**.
 * Independent physics for **each half** of the chest (`chestLeft/chestRight`) and hips (`hipsLeft/hipsRight`) — 4 separate inertial bodies with their own spring-damper state, frequencies (`tick*1.15` vs `tick*0.72`) and counter-phase turn inertia.
-* True **3D world collisions (AABB)** for chest, hips and pouch — squash against walls, fences, columns; pouch/chest mutual repulsion.
 * Reduced vertical inertia (bouncy but not floaty), deep horizontal/depth oscillations.
-* 100% skin-blended rendering (`player.getSkinTextureLocation()`): chest reads `texOffs(20,20)`, hips/pants `texOffs(8,20)`, pouch `texOffs(20,28)` — seamless continuation of the player's skin.
-
-### 🎒 Belt pouch
-* Decorative front belt pouch with its own jiggle physics.
-* Position offsets (X/Y/Z) and size sliders (X/Y/Z, `0.10..0.50`), centered pivot so scaling never shifts it into the chest.
 
 ### 🎨 GUI
-* Open with a hotkey (**V** or **G**, configurable) — 6 clean tabs: ★ Presets, 🐱 Ears, 🦊 Tail, 🎨 Colors, 👗 Figure, 🎒 Pouch.
 * **Orbit camera 3D preview:** LMB-drag rotate, RMB/scroll zoom, MMB/Shift+LMB pan.
 * Presets: Ember Tuft, Ribbon Cat, Fox/Cat, Wolf and Rabbit.
 * Pixel-art texture painting right inside the GUI.

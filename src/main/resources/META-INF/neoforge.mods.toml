@@ -5,7 +5,7 @@ issueTrackerURL="https://github.com/antonovichkorp1985-maker/faradayears/issues"
 
 [[mods]]
 modId="faradayears"
-version="2.1.0"
+version="2.1.1"
 displayName="Kinetic Ears & Tails"
 displayURL="https://github.com/antonovichkorp1985-maker/faradayears"
 authors="Kinetic Ears & Tails contributors"
@@ -17,7 +17,6 @@ description='''
  - Точная настройка размеров, углов поворота и смещения ушек и хвоста
  - Физический хвост (Verlet + PBD) с коллизиями о землю и блоки; 2 режима: Классика / Реалистичная скелетно-мышечная
  - Кастомная текстура 64x64 (единый лист ушек и хвоста) с пиксельным редактором в GUI и подсказкой зон
- - Фигура с независимой физикой полушарий и декоративный поясной мешочек
  - Синхронизация между игроками по сети (мультиплеер!)
 '''
 

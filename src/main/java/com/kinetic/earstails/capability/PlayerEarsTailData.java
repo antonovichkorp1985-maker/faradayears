@@ -12,6 +12,13 @@ import net.neoforged.neoforge.common.util.INBTSerializable;
  */
 public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
 
+    /**
+     * The pouch prototype is intentionally excluded from public releases. Its implementation
+     * remains in source for possible future work, but this single gate keeps it out of UI,
+     * rendering, physics and newly synchronized settings.
+     */
+    public static final boolean POUCH_FEATURE_ENABLED = false;
+
     @Override
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         return saveNBTData();
@@ -412,7 +419,7 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         nbt.putBoolean("ShowChest", showChest);
         nbt.putBoolean("ShowHips", showHips);
         nbt.putBoolean("ShowShoulders", showShoulders);
-        nbt.putBoolean("ShowPouch", showPouch);
+        nbt.putBoolean("ShowPouch", isShowPouch());
         nbt.putFloat("ChestScaleX", chestScaleX);
         nbt.putFloat("ChestScaleY", chestScaleY);
         nbt.putFloat("ChestScaleZ", chestScaleZ);
@@ -480,7 +487,8 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
         if (nbt.contains("ShowChest")) showChest = nbt.getBoolean("ShowChest");
         if (nbt.contains("ShowHips")) showHips = nbt.getBoolean("ShowHips");
         if (nbt.contains("ShowShoulders")) showShoulders = nbt.getBoolean("ShowShoulders");
-        if (nbt.contains("ShowPouch")) showPouch = nbt.getBoolean("ShowPouch");
+        // Pouch prototype data from development builds is deliberately ignored in releases.
+        showPouch = false;
         if (nbt.contains("ChestScaleX")) chestScaleX = nbt.getFloat("ChestScaleX");
         if (nbt.contains("ChestScaleY")) chestScaleY = nbt.getFloat("ChestScaleY");
         if (nbt.contains("ChestScaleZ")) chestScaleZ = nbt.getFloat("ChestScaleZ");
@@ -591,8 +599,11 @@ public class PlayerEarsTailData implements INBTSerializable<CompoundTag> {
     public void setShowHips(boolean h) { this.showHips = h; }
     public boolean isShowShoulders() { return showShoulders; }
     public void setShowShoulders(boolean s) { this.showShoulders = s; }
-    public boolean isShowPouch() { return showPouch; }
-    public void setShowPouch(boolean p) { this.showPouch = p; }
+    public boolean isShowPouch() { return POUCH_FEATURE_ENABLED && showPouch; }
+    public void setShowPouch(boolean p) {
+        // Prototype disabled for public builds; preserve the code/data layout for future work.
+        this.showPouch = POUCH_FEATURE_ENABLED && p;
+    }
     public float getChestScaleX() { return chestScaleX; }
     public void setChestScaleX(float v) { this.chestScaleX = v; }
     public float getChestScaleY() { return chestScaleY; }

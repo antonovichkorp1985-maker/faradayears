@@ -70,8 +70,10 @@ public class EarsTailCustomizationScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.ears"), b -> switchTab(1)).bounds(panelLeft + 26, 16, 38, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.tail"), b -> switchTab(2)).bounds(panelLeft + 66, 16, 42, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.body"), b -> switchTab(4)).bounds(panelLeft + 110, 16, 46, 20).build());
+        /* Pouch prototype intentionally hidden from public releases.
         addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.pouch"), b -> switchTab(5)).bounds(panelLeft + 158, 16, 50, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.texture"), b -> switchTab(3)).bounds(panelLeft + 210, 16, 40, 20).build());
+        */
+        addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.tab.texture"), b -> switchTab(3)).bounds(panelLeft + 160, 16, 48, 20).build());
 
         if (activeTab == 0) {
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.preset.faraday"), b -> {
@@ -247,9 +249,11 @@ public class EarsTailCustomizationScreen extends Screen {
             }
 
             int jumpY = (localData.getGender() == 3) ? topPos + 226 : (localData.getGender() == 2 ? topPos + 84 : (localData.getGender() == 1 ? topPos + 166 : topPos + 24));
+            /* Pouch prototype intentionally excluded from the public menu.
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.goto_pouch"), b -> switchTab(5)).bounds(panelLeft, jumpY, btnWidth, 18).build());
+            */
 
-            int resetY = jumpY + 22;
+            int resetY = jumpY;
             addRenderableWidget(Button.builder(Component.translatable("gui.faradayears.body.reset"), b -> {
                 localData.resetBodyOnly();
                 applyLiveUpdate();

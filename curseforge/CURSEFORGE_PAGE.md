@@ -61,7 +61,6 @@ Press **V** by default to open the customization screen.
 
 - Optional body-shape controls
 - Independent secondary-motion settings
-- Optional animated decorative belt pouch
 - Complete factory reset
 - Persistent player settings
 
@@ -116,6 +115,5 @@ First public release under the independent Kinetic Ears & Tails name.
 - HSV color picker and 64×64 texture editor
 - Ear and tail UV guides
 - Multiplayer appearance synchronization
-- Optional body controls and animated belt pouch
 - Reliable customization menu with complete factory reset
 - Independent naming, artwork and project presentation
